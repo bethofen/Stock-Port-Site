@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#070a0f">
+<title>Stock Port · Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@400;500;600&family=Chakra+Petch:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #070a0f; --bg-1: #0b1017; --bg-2: #101722; --bg-3: #151e2b;
+    --line: #1a2432; --line-2: #263345;
+    --fg: #e4ebf3; --fg-2: #a3b3c6; --fg-3: #8090a4;
+    --acc: #5ee6ff; --acc-2: #2bb6d0; --acc-dim: rgba(94,230,255,.10); --acc-line: rgba(94,230,255,.35);
+    --up: #3ddc97; --down: #ff6470; --warn: #ffb347;
+    --acc-ink: #04141a; --glass: rgba(11,16,23,.92); --gate-glow: rgba(94,230,255,.07); --lift: 0 24px 60px -30px rgba(0,0,0,.9);
+    --rail: 296px; --gutter: 28px; --radius: 6px;
+    --sans: "Bai Jamjuree", "Noto Sans Thai", "Segoe UI", system-ui, sans-serif;
+    --num: "Chakra Petch", "Bai Jamjuree", "Segoe UI", system-ui, sans-serif;
+  }
+  html[data-theme="light"] {
+    --bg: #eef1f5; --bg-1: #ffffff; --bg-2: #f3f5f8; --bg-3: #e6ebf1;
+    --line: #dde3ea; --line-2: #c7d0db;
+    --fg: #0f1722; --fg-2: #435367; --fg-3: #5c6c80;
+    --acc: #0b7d9f; --acc-2: #0a6a87; --acc-dim: rgba(11,125,159,.10); --acc-line: rgba(11,125,159,.38);
+    --up: #0d8a53; --down: #cf2f3c; --warn: #a86400;
+    --acc-ink: #ffffff; --glass: rgba(255,255,255,.9); --gate-glow: rgba(11,125,159,.08); --lift: 0 24px 60px -30px rgba(15,23,34,.35);
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); scrollbar-color: var(--line-2) var(--bg); color-scheme: dark; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--acc); color: var(--acc-ink); }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: var(--line-2); border: 3px solid var(--bg); border-radius: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  :focus-visible { outline: 1.5px solid var(--acc); outline-offset: 2px; }
+  input { caret-color: var(--acc); }
+  a { color: var(--acc); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  h1, h2, h3 { margin: 0; font-weight: 600; text-wrap: balance; }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  [hidden] { display: none !important; }
+
+  .n, .num, td.num, th.num { font-family: var(--num); font-variant-numeric: tabular-nums; letter-spacing: .01em; }
+  .up { color: var(--up); } .down { color: var(--down); } .warn { color: var(--warn); } .flat { color: var(--fg-2); }
+  .muted { color: var(--fg-2); } .dim { color: var(--fg-3); }
+  .lbl { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-3); font-weight: 500; }
+  .lamp { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--fg-3); vertical-align: middle; margin-right: 7px; }
+  .lamp.ok { background: var(--up); box-shadow: 0 0 0 3px rgba(61,220,151,.15); }
+  .lamp.warn { background: var(--warn); box-shadow: 0 0 0 3px rgba(255,179,71,.15); }
+  .lamp.bad { background: var(--down); box-shadow: 0 0 0 3px rgba(255,100,112,.15); }
+
+  /* ---------- gate ---------- */
+  #gate { min-height: 100svh; display: grid; place-items: center; padding: 24px; background:
+    radial-gradient(1200px 600px at 50% -10%, var(--gate-glow), transparent 60%), var(--bg); }
+  .lock { width: 100%; max-width: 400px; border: 1px solid var(--line-2); background: var(--bg-1); border-radius: 10px; padding: 28px 28px 22px; position: relative;
+    box-shadow: var(--lift); }
+  .lock::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 1px; background: linear-gradient(90deg, transparent, var(--acc-line), transparent); }
+  .lock .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 22px; }
+  .brand-mark { width: 26px; height: 26px; flex: none; }
+  .lock h1 { font-family: var(--num); font-size: 20px; letter-spacing: .04em; }
+  .lock p { margin: 0 0 16px; color: var(--fg-2); font-size: 14px; }
+  .lock label { display: block; }
+  .lock input { width: 100%; font: 17px/1 var(--num); letter-spacing: .18em; padding: 13px 14px; color: var(--fg); background: var(--bg); border: 1px solid var(--line-2); border-radius: var(--radius); transition: border-color .15s; }
+  .lock input:focus { border-color: var(--acc); outline: none; box-shadow: 0 0 0 3px var(--acc-dim); }
+  .lock button { width: 100%; margin-top: 12px; padding: 13px; border: 0; border-radius: var(--radius); background: var(--acc); color: var(--acc-ink); font-weight: 600; font-size: 15px; letter-spacing: .02em; transition: transform .12s, filter .15s; }
+  .lock button:hover { filter: brightness(1.08); } .lock button:active { transform: translateY(1px); }
+  .lock button:disabled { opacity: .55; cursor: progress; }
+  .lock .err { min-height: 22px; margin-top: 10px; font-size: 13px; color: var(--down); }
+  .lock .err.busy { color: var(--fg-2); }
+  .lock .meta { margin-top: 10px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 12px; color: var(--fg-3); display: flex; justify-content: space-between; gap: 12px; }
+
+  /* ---------- app frame ---------- */
+  #app { min-height: 100svh; }
+  #rail { display: none; }
+  main { padding: 18px var(--gutter) 96px; max-width: 1180px; }
+  .bar { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 4px 0 18px; }
+  .bar h2 { font-size: 20px; }
+  .bar .date { font-family: var(--num); color: var(--fg-2); font-size: 13px; letter-spacing: .06em; }
+  .bar .right { display: flex; align-items: center; gap: 10px; }
+  .tbtn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid var(--line-2); border-radius: var(--radius); background: var(--bg-1); color: var(--fg-2); transition: color .12s, border-color .12s; }
+  .tbtn:hover { color: var(--acc); border-color: var(--acc-line); }
+  .tbtn svg { width: 16px; height: 16px; }
+  .lock .tbtn { position: absolute; top: 14px; right: 14px; }
+  section { display: none; } section.on { display: block; animation: fade .12s ease-out both; }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  @media (prefers-reduced-motion: reduce) { section.on { animation: none; } * { transition: none !important; } }
+
+  /* mobile summary strip */
+  #strip { display: flex; gap: 8px; overflow-x: auto; padding: 12px var(--gutter) 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-snap-type: x proximity; }
+  #strip::-webkit-scrollbar { display: none; }
+  .tile { flex: none; min-width: 132px; padding: 10px 12px; border: 1px solid var(--line); background: var(--bg-1); border-radius: var(--radius); scroll-snap-align: start; }
+  .tile .lbl { display: block; margin-bottom: 3px; }
+  .tile .v { font-family: var(--num); font-size: 17px; font-weight: 600; }
+  .tile .s { font-size: 11px; color: var(--fg-3); }
+
+  /* mobile tab bar */
+  #tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: grid; grid-template-columns: repeat(7, 1fr); background: var(--glass); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--line-2); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); }
+  #tabbar button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0 4px; border: 0; background: none; color: var(--fg-3); font-size: 10.5px; border-radius: var(--radius); }
+  #tabbar button svg { width: 20px; height: 20px; }
+  #tabbar button.on { color: var(--acc); }
+
+  /* rail (desktop) */
+  #rail .brand { display: flex; align-items: center; gap: 10px; padding: 0 0 18px; border-bottom: 1px solid var(--line); }
+  #rail .brand h1 { font-family: var(--num); font-size: 16px; letter-spacing: .06em; }
+  #rail .brand .sub { font-size: 11px; color: var(--fg-3); letter-spacing: .08em; }
+  .tele { padding: 16px 0; border-bottom: 1px solid var(--line); }
+  .tele + .tele { border-top: 0; }
+  .tele .name { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .tele .name b { font-weight: 600; font-size: 14px; }
+  .tele .name span { font-family: var(--num); font-size: 11px; color: var(--fg-3); letter-spacing: .1em; }
+  .tele .big { font-family: var(--num); font-size: 30px; font-weight: 600; line-height: 1.1; letter-spacing: -.01em; }
+  .tele .big small { font-size: 12px; color: var(--fg-3); letter-spacing: .1em; margin-left: 6px; font-weight: 500; }
+  .tele .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin-top: 12px; }
+  .tele .grid .lbl { display: block; margin-bottom: 1px; }
+  .tele .grid .v { font-family: var(--num); font-size: 14px; font-weight: 500; }
+  .meter { height: 3px; background: var(--line-2); border-radius: 2px; margin-top: 12px; overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 100%; background: var(--acc); transform: scaleX(0); transform-origin: left; transition: transform .9s cubic-bezier(.2,.7,.2,1); }
+  .meter.hot i { background: var(--warn); }
+  .breach { margin-top: 10px; font-size: 12px; color: var(--warn); }
+  .breach div { padding: 3px 0 3px 12px; position: relative; }
+  .breach div::before { content: ""; position: absolute; left: 0; top: 10px; width: 5px; height: 5px; border-radius: 50%; background: var(--warn); }
+  #rail nav { padding: 12px 0 0; display: flex; flex-direction: column; gap: 2px; }
+  #rail nav button { display: flex; align-items: center; gap: 11px; width: 100%; padding: 9px 10px; border: 0; background: none; color: var(--fg-2); border-radius: var(--radius); text-align: left; font-size: 14px; position: relative; transition: background .12s, color .12s; }
+  #rail nav button svg { width: 18px; height: 18px; flex: none; opacity: .8; }
+  #rail nav button:hover { background: var(--bg-2); color: var(--fg); }
+  #rail nav button.on { background: var(--acc-dim); color: var(--acc); }
+  #rail nav button .k { margin-left: auto; font-family: var(--num); font-size: 11px; color: var(--fg-3); }
+  #rail .foot { margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line); font-size: 11.5px; color: var(--fg-3); line-height: 1.6; }
+  #rail .foot .n { color: var(--fg-2); }
+
+  @media (min-width: 1024px) {
+    #app { display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); }
+    #rail { display: flex; flex-direction: column; position: sticky; top: 0; height: 100svh; overflow: auto; padding: 22px 20px 18px; border-right: 1px solid var(--line); background: var(--bg-1); scrollbar-width: thin; }
+    #strip, #tabbar { display: none; }
+    main { padding: 26px 36px 80px; }
+    .bar h2 { font-size: 22px; }
+  }
+
+  /* ---------- content atoms ---------- */
+  .panel { border: 1px solid var(--line); background: var(--bg-1); border-radius: 8px; padding: 16px 18px; }
+  .panel + .panel, .panel + .wrap, .wrap + .panel, .wrap + .wrap { margin-top: 14px; }
+  h3.sec { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--fg-3); margin: 30px 0 10px; font-weight: 500; display: flex; align-items: center; gap: 10px; }
+  h3.sec::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  h3.sec:first-child { margin-top: 0; }
+  .tl { display: flex; flex-wrap: wrap; gap: 6px 0; padding: 6px 0 12px; margin-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .tl > div { display: flex; align-items: baseline; gap: 8px; padding: 2px 18px 2px 0; margin-right: 18px; border-right: 1px solid var(--line); }
+  .tl > div:last-child { border-right: 0; margin-right: 0; padding-right: 0; }
+  .tl .v { font-family: var(--num); font-size: 18px; font-weight: 600; line-height: 1.1; }
+  .tl .s { font-size: 12px; color: var(--fg-3); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--line-2); border-radius: 999px; font-size: 12.5px; background: var(--bg-2); }
+  .chip .n { color: var(--fg-2); }
+  .chip.acc { border-color: var(--acc-line); color: var(--acc); background: var(--acc-dim); }
+  .chip.warn { border-color: rgba(255,179,71,.4); color: var(--warn); }
+  .empty { padding: 28px 18px; text-align: center; color: var(--fg-2); border: 1px dashed var(--line-2); border-radius: 8px; font-size: 14px; }
+  .empty b { display: block; color: var(--fg); font-weight: 500; margin-bottom: 4px; }
+  .wrap { overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-1); }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th, td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { position: sticky; top: 0; background: var(--bg-2); color: var(--fg-3); font-weight: 500; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+  td.num, th.num { text-align: right; }
+  tbody tr { transition: background .1s; } tbody tr:hover { background: var(--bg-2); }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.sym { font-family: var(--num); font-weight: 600; letter-spacing: .03em; }
+  td.wrapcell { white-space: normal; min-width: 220px; color: var(--fg-2); }
+  .view { display: inline-block; font-family: var(--num); font-size: 11px; letter-spacing: .1em; padding: 2px 7px; border-radius: 4px; border: 1px solid var(--line-2); color: var(--fg-2); }
+  .view.BUY { color: var(--up); border-color: rgba(61,220,151,.4); } .view.SELL, .view.TRIM { color: var(--down); border-color: rgba(255,100,112,.4); }
+  .view.HOLD { color: var(--acc); border-color: var(--acc-line); } .view.WAIT { color: var(--warn); border-color: rgba(255,179,71,.4); }
+  .grade { font-family: var(--num); font-weight: 600; color: var(--acc); }
+
+  /* digest */
+  .digest-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 999px; padding: 2px; background: var(--bg-1); }
+  .seg button { border: 0; background: none; color: var(--fg-2); padding: 5px 12px; border-radius: 999px; font-size: 13px; }
+  .seg button.on { background: var(--acc); color: var(--acc-ink); font-weight: 600; }
+  .digest { border: 1px solid var(--line); background: var(--bg-1); border-radius: 8px; padding: 22px 24px; max-width: 78ch; font-size: 15px; line-height: 1.7; }
+  .digest p { margin: 0 0 12px; } .digest p:last-child { margin-bottom: 0; }
+  .digest strong { color: var(--fg); font-weight: 600; }
+  .digest em { color: var(--fg-2); font-style: normal; }
+  .digest code { font-family: var(--num); font-size: 13px; background: var(--bg-2); padding: 1px 5px; border-radius: 4px; }
+  .digest pre { font-family: var(--num); font-size: 13px; line-height: 1.5; background: none; border: 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); border-radius: 0; padding: 10px 0; overflow-x: auto; margin: 8px 0 14px; color: var(--fg-2); }
+  .today { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-items: start; }
+  .today .side { min-width: 0; }
+  @media (min-width: 1280px) { .today { grid-template-columns: minmax(0, 78ch) minmax(300px, 1fr); } .today .side { position: sticky; top: 26px; } .today .side h3.sec { margin-top: 0; } }
+  .status { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; font-size: 13px; color: var(--fg-2); }
+  .status .n { color: var(--fg); }
+  .archive { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 16px; }
+  .archive .list { display: flex; flex-direction: column; gap: 2px; max-height: 70vh; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--bg-1); padding: 6px; }
+  .archive .list button { display: flex; justify-content: space-between; align-items: center; border: 0; background: none; color: var(--fg-2); padding: 8px 10px; border-radius: var(--radius); font-family: var(--num); font-size: 13px; letter-spacing: .04em; text-align: left; }
+  .archive .list button:hover { background: var(--bg-2); color: var(--fg); }
+  .archive .list button.on { background: var(--acc-dim); color: var(--acc); }
+  .archive .list button .w { font-size: 10px; letter-spacing: .1em; color: var(--fg-3); }
+  .archive .list button.on .w { color: var(--acc-2); }
+  @media (max-width: 720px) {
+    .archive { grid-template-columns: 1fr; }
+    .archive .list { flex-direction: row; overflow-x: auto; max-height: none; padding: 4px; }
+    .archive .list button { flex: none; }
+    .digest { padding: 16px; font-size: 14.5px; }
+    .tl { gap: 8px 0; } .tl > div { border-right: 0; margin-right: 0; padding-right: 0; flex: 1 1 100%; }
+    main { padding-left: 16px; padding-right: 16px; }
+    #strip { padding-left: 16px; padding-right: 16px; }
+  }
+  .hints li { margin: 6px 0; color: var(--fg-2); } .hints { padding-left: 18px; margin: 10px 0 0; }
+  .lesson { white-space: pre-wrap; font-size: 13.5px; color: var(--fg-2); line-height: 1.6; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 16px; font-size: 13.5px; }
+  .kv span { color: var(--fg-3); } .kv b { font-weight: 500; font-family: var(--num); }
+  .bars { display: grid; gap: 8px; margin-top: 12px; }
+  .bar-row { display: grid; grid-template-columns: 56px 1fr 92px; align-items: center; gap: 10px; font-size: 13px; }
+  .bar-row .t { height: 6px; background: var(--line); border-radius: 3px; position: relative; }
+  .bar-row .t::after { content: ""; position: absolute; left: 60%; top: -4px; bottom: -4px; border-left: 1px dashed var(--fg-3); }
+  .bar-row .t i { display: block; height: 100%; width: 100%; background: var(--acc); border-radius: 3px; transform: scaleX(0); transform-origin: left; transition: transform .9s cubic-bezier(.2,.7,.2,1); }
+  .bar-row .t i.low { background: var(--down); } .bar-row .t i.mid { background: var(--warn); }
+</style>
+</head>
+<body>
+<!--
+THESIS: A mission-control console for one portfolio: today's judgement leads, the telemetry never leaves the rail. Refuses the broker-app dashboard of same-size KPI cards and neon glow.
+OWN-WORLD: Near-black blue ground, hairline rules, one mission cyan accent, semantic green/red reserved for sign. Bai Jamjuree for Thai/Latin prose, Chakra Petch for every numeral and label. Panels are ruled regions, not floating cards; status is a lamp, not a badge. A light rendition swaps only the tokens (paper-white ground, deep cyan ink); dark is the default.
+STORY: Open, unlock, read this morning's digest; glance left for where the money stands; drill into holdings, deals, track record, Jitta when needed.
+FIRST VIEWPORT: Desktop: left rail 296px with brand lamp, per-portfolio telemetry (total large, invest/cash/P&L grid, margin meter, breaches), vertical nav; right pane opens on วันนี้ with the latest digest in a 78ch reading panel. Mobile: horizontal telemetry strip, digest, bottom tab bar.
+FORM: Mission-control telemetry console, candidate 6 of 7 (user-pinned dark futuristic finance; seed 864438b9).
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance.
+-->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-mark" viewBox="0 0 26 26"><circle cx="13" cy="13" r="11.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6 15.5 10.5 10l3.5 4 5.5-7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-today" viewBox="0 0 20 20"><path d="M4 3.5h12v13H4z M7 8h6 M7 11h6 M7 14h3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-port" viewBox="0 0 20 20"><path d="M3 7.5h14v8.5H3z M7.5 7.5V5h5v2.5 M3 11.5h14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-deal" viewBox="0 0 20 20"><path d="M4 7h11l-3-3 M16 13H5l3 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-rep" viewBox="0 0 20 20"><path d="M4 4h12v12H4z M4 8h12 M8 8v8" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-learn" viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 1.5v3 M10 15.5v3 M1.5 10h3 M15.5 10h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-jitta" viewBox="0 0 20 20"><path d="M3 16 8 9l3 3 6-8 M3 16h14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 20 20"><circle cx="10" cy="10" r="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 2v2.2M10 15.8V18M2 10h2.2M15.8 10H18M4.3 4.3l1.6 1.6M14.1 14.1l1.6 1.6M4.3 15.7l1.6-1.6M14.1 5.9l1.6-1.6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 20 20"><path d="M16 12.2A6.5 6.5 0 0 1 7.8 4a6.5 6.5 0 1 0 8.2 8.2z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></symbol>
+    <symbol id="i-watch" viewBox="0 0 20 20"><path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.5" fill="none" stroke="currentColor" stroke-width="1.5"/></symbol>
+  </defs>
+</svg>
+
+<div id="gate">
+  <form class="lock" id="lock" autocomplete="off">
+    <div class="brand"><svg class="brand-mark" style="color:var(--acc)"><use href="#i-mark"/></svg><h1>STOCK PORT</h1></div>
+    <button type="button" class="tbtn" data-theme-toggle aria-label="สลับธีมสว่าง/มืด" title="สลับธีม"><svg aria-hidden="true"><use href="#i-sun"/></svg></button>
+    <p id="gate-msg">ใส่รหัสผ่านเพื่อถอดรหัสรายงาน ถอดในเครื่องคุณเท่านั้น ไม่ส่งไปที่ไหน</p>
+    <label><span class="lbl">รหัสผ่าน</span><input id="pass" type="password" placeholder="••••••••" autocomplete="current-password" autofocus></label>
+    <button id="open" type="submit">เปิดคอนโซล</button>
+    <div class="err" id="gate-err" aria-live="polite"></div>
+    <div class="meta"><span id="gate-meta">กำลังอ่าน meta.json…</span><span class="n">AES-256-GCM</span></div>
+  </form>
+</div>
+
+<div id="app" hidden>
+  <aside id="rail">
+    <div class="brand"><svg class="brand-mark" style="color:var(--acc)"><use href="#i-mark"/></svg><div><h1>STOCK PORT</h1><div class="sub" id="rail-sub"></div></div></div>
+    <div id="rail-tele"></div>
+    <nav id="rail-nav" aria-label="ส่วนต่าง ๆ"></nav>
+    <div class="foot" id="rail-foot"></div>
+  </aside>
+
+  <div>
+    <div id="strip"></div>
+    <main>
+      <div class="bar"><h2 id="bar-title"></h2><div class="right"><span class="date" id="bar-date"></span><button type="button" class="tbtn" data-theme-toggle aria-label="สลับธีมสว่าง/มืด" title="สลับธีม"><svg aria-hidden="true"><use href="#i-sun"/></svg></button></div></div>
+      <section data-tab="today"><div id="v-today"></div></section>
+      <section data-tab="holdings"><div id="v-holdings"></div></section>
+      <section data-tab="trades"><div id="v-trades"></div></section>
+      <section data-tab="reports"><div id="v-reports"></div></section>
+      <section data-tab="learning"><div id="v-learning"></div></section>
+      <section data-tab="jitta"><div id="v-jitta"></div></section>
+      <section data-tab="watch"><div id="v-watch"></div></section>
+    </main>
+  </div>
+  <nav id="tabbar" aria-label="ส่วนต่าง ๆ"></nav>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var TABS = [["today", "วันนี้", "i-today"], ["holdings", "พอร์ต", "i-port"], ["trades", "ดีล", "i-deal"], ["reports", "รายงาน", "i-rep"],
+              ["learning", "เรียนรู้", "i-learn"], ["jitta", "Jitta", "i-jitta"], ["watch", "Watch", "i-watch"]];
+  var D = null;
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---------------------------------------------------------------- theme (dark default; light remembered per device)
+  function getTheme() { try { return localStorage.getItem("theme") === "light" ? "light" : "dark"; } catch (e) { return "dark"; } }
+  function applyTheme(name) {
+    if (name === "light") document.documentElement.setAttribute("data-theme", "light"); else document.documentElement.removeAttribute("data-theme");
+    var m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = name === "light" ? "#eef1f5" : "#070a0f";
+    document.querySelectorAll("[data-theme-toggle] use").forEach(function (u) { u.setAttribute("href", name === "light" ? "#i-moon" : "#i-sun"); });
+  }
+  applyTheme(getTheme());
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest && e.target.closest("[data-theme-toggle]"); if (!b) return;
+    var next = getTheme() === "light" ? "dark" : "light";
+    try { localStorage.setItem("theme", next); } catch (err) {}
+    applyTheme(next);
+  });
+
+  // ---------------------------------------------------------------- helpers
+  function esc(s) { return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+  function isNum(v) { return !(v == null || v === "" || isNaN(Number(v))); }
+  function num(v, d) { if (!isNum(v)) return "–"; return Number(v).toLocaleString("en-US", { minimumFractionDigits: d == null ? 2 : d, maximumFractionDigits: d == null ? 2 : d }); }
+  function signed(v, d) { if (!isNum(v)) return "–"; var n = Number(v); return (n > 0 ? "+" : "") + num(n, d); }
+  function cls(v) { if (!isNum(v)) return "dim"; var n = Number(v); return n > 0 ? "up" : n < 0 ? "down" : "flat"; }
+  function pct(v, d) { if (!isNum(v)) return '<span class="dim">–</span>'; return '<span class="' + cls(v) + '">' + signed(v, d == null ? 2 : d) + "%</span>"; }
+  function line(v, d) { if (!isNum(v)) return '<span class="dim">–</span>'; var n = Number(v); return '<span class="' + (n < 0 ? "up" : n > 0 ? "warn" : "flat") + '">' + signed(v, d == null ? 0 : d) + "%</span>"; }
+  function money(v, d) { if (!isNum(v)) return '<span class="dim">–</span>'; return '<span class="' + cls(v) + '">' + signed(v, d) + "</span>"; }
+  function icon(id) { return '<svg aria-hidden="true"><use href="#' + id + '"/></svg>'; }
+  function view(v) { v = String(v || "").toUpperCase(); return v ? '<span class="view ' + esc(v) + '">' + esc(v) + "</span>" : '<span class="dim">–</span>'; }
+  function table(cols, rows) {
+    cols = cols.filter(function (c) { return !c.opt || rows.some(function (r) { return !blank(typeof c.get === "function" ? c.get(r) : r[c.key]); }); });
+    var h = '<div class="wrap"><table><thead><tr>' + cols.map(function (c) { return '<th class="' + (c.num ? "num" : "") + '">' + esc(c.label) + "</th>"; }).join("") + "</tr></thead><tbody>";
+    rows.forEach(function (r) {
+      h += "<tr>" + cols.map(function (c) {
+        var v = typeof c.get === "function" ? c.get(r) : r[c.key];
+        var k = (c.num ? "num " : "") + (c.sym ? "sym " : "") + (c.wrap ? "wrapcell " : "");
+        return '<td class="' + k.trim() + '">' + (c.raw ? v : (v == null || v === "" ? '<span class="dim">–</span>' : esc(v))) + "</td>";
+      }).join("") + "</tr>";
+    });
+    return h + "</tbody></table></div>";
+  }
+  function empty(title, body) { return '<div class="empty"><b>' + esc(title) + "</b>" + esc(body || "") + "</div>"; }
+  function kv(pairs) { return '<div class="kv">' + pairs.map(function (p) { return "<span>" + esc(p[0]) + "</span><b>" + (p[2] ? p[1] : esc(p[1])) + "</b>"; }).join("") + "</div>"; }
+  function blank(v) { return v == null || v === "" || v === "–" || /class="dim"/.test(String(v)); }
+  // One ruled telemetry line: [label, value, sub, raw]; pairs with no value are omitted, never shown as an empty cell.
+  function tl(items) {
+    var h = items.filter(function (i) { return !blank(i[1]); }).map(function (i) {
+      return '<div><span class="lbl">' + esc(i[0]) + '</span><span class="v">' + (i[3] ? i[1] : esc(i[1])) + "</span>" + (i[2] ? '<span class="s">' + esc(i[2]) + "</span>" : "") + "</div>";
+    }).join("");
+    return h ? '<div class="tl">' + h + "</div>" : "";
+  }
+
+  // Telegram legacy Markdown -> HTML (what the digests are written in).
+  function tg(text) {
+    var out = "", parts = String(text || "").replace(/\r/g, "").split(/```[^\n]*\n?/);
+    parts.forEach(function (p, i) {
+      if (i % 2) { out += "<pre>" + esc(p.replace(/\n+$/, "")) + "</pre>"; return; }
+      p.split(/\n{2,}/).forEach(function (para) {
+        if (!para.trim()) return;
+        var s = esc(para)
+          .replace(/`([^`\n]+)`/g, "<code>$1</code>")
+          .replace(/\*([^*\n]+)\*/g, "<strong>$1</strong>")
+          .replace(/(^|[^\w])_([^_\n]+)_(?=[^\w]|$)/g, "$1<em>$2</em>")
+          .replace(/\n/g, "<br>");
+        out += "<p>" + s + "</p>";
+      });
+    });
+    return out;
+  }
+
+  // ---------------------------------------------------------------- crypto gate
+  function b64(s) { var bin = atob(s), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+  async function decrypt(blob, pass) {
+    var enc = new TextEncoder();
+    var base = await crypto.subtle.importKey("raw", enc.encode(pass), "PBKDF2", false, ["deriveKey"]);
+    var key = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: b64(blob.salt), iterations: blob.iterations || 200000, hash: "SHA-256" },
+                                            base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+    var pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(blob.iv) }, key, b64(blob.ct));
+    return JSON.parse(new TextDecoder().decode(pt));
+  }
+  async function boot() {
+    var meta = await fetch("./meta.json", { cache: "no-store" }).then(function (r) { return r.json(); }).catch(function () { return null; });
+    if (!meta) { $("gate-err").textContent = "ไม่พบ meta.json ยังไม่ได้ build รายงาน รัน workflow Deploy site ก่อน"; $("gate-meta").textContent = ""; return; }
+    $("gate-meta").textContent = "ข้อมูลถึง " + (meta.latest_date || "?");
+    if (!meta.encrypted) {
+      $("gate-msg").textContent = "รายงานนี้ไม่ได้เข้ารหัส (build ด้วย --plain)";
+      D = await fetch("./site-data.json", { cache: "no-store" }).then(function (r) { return r.json(); });
+      show(); return;
+    }
+    var blob = null;
+    async function attempt(e) {
+      if (e) e.preventDefault();
+      var pass = $("pass").value;
+      if (!pass) { $("pass").focus(); return; }
+      $("open").disabled = true; $("gate-err").className = "err busy"; $("gate-err").textContent = "กำลังถอดรหัส…";
+      try {
+        blob = blob || await fetch("./site-data.json.enc", { cache: "no-store" }).then(function (r) { return r.json(); });
+        D = await decrypt(blob, pass); $("gate-err").textContent = ""; show();
+      } catch (err) {
+        $("gate-err").className = "err"; $("gate-err").textContent = "รหัสผ่านไม่ถูกต้อง ลองใหม่ (ต้องตรงกับ SITE_PASSPHRASE ที่ตั้งไว้)";
+        $("pass").select();
+      }
+      $("open").disabled = false;
+    }
+    $("lock").addEventListener("submit", attempt);
+    $("pass").focus();
+  }
+
+  // ---------------------------------------------------------------- frame
+  function show() {
+    $("gate").hidden = true; $("app").hidden = false;
+    document.title = "Stock Port · " + (D.latest_date || "");
+    var navs = [$("rail-nav"), $("tabbar")];
+    navs.forEach(function (nav) {
+      TABS.forEach(function (t) {
+        var b = document.createElement("button"); b.type = "button"; b.dataset.tab = t[0];
+        b.innerHTML = icon(t[2]) + "<span>" + esc(t[1]) + "</span>";
+        b.addEventListener("click", function () { select(t[0]); });
+        nav.appendChild(b);
+      });
+    });
+    renderRail(); renderStrip(); renderToday(); renderHoldings(); renderTrades(); renderReports(); renderLearning(); renderJitta(); renderWatch();
+    var counts = { holdings: totalHoldings(), trades: totalTrades(), reports: (D.reports || []).length, watch: watchSymbols().length };
+    document.querySelectorAll("#rail-nav button").forEach(function (b) { if (counts[b.dataset.tab]) b.insertAdjacentHTML("beforeend", '<span class="k">' + counts[b.dataset.tab] + "</span>"); });
+    select(location.hash.replace("#", "") || "today", true);
+    window.addEventListener("hashchange", function () { var t = location.hash.replace("#", ""); if (t) select(t, true); });
+    powerUp();
+  }
+  function select(tab, silent) {
+    if (!TABS.some(function (t) { return t[0] === tab; })) tab = "today";
+    document.querySelectorAll("#rail-nav button, #tabbar button").forEach(function (b) { b.classList.toggle("on", b.dataset.tab === tab); });
+    document.querySelectorAll("main section").forEach(function (s) { s.classList.toggle("on", s.dataset.tab === tab); });
+    var t = TABS.filter(function (x) { return x[0] === tab; })[0];
+    $("bar-title").textContent = t[1] === "วันนี้" ? "รายงานเช้า" : t[1];
+    $("bar-date").textContent = tab === "today" ? (latestReport() ? latestReport().date : "") : "ข้อมูลถึง " + (D.latest_date || "–");
+    if (location.hash.replace("#", "") !== tab) history.replaceState(null, "", "#" + tab);
+    if (!silent) window.scrollTo({ top: 0 });
+    var sec = document.querySelector('main section[data-tab="' + tab + '"]');
+    if (sec && sec.querySelector("i[data-w]")) fillMeters(sec);
+  }
+  // The one authored moment: the console powers up, numerals run to their value, meters fill.
+  function powerUp(root) {
+    root = root || document;
+    root.querySelectorAll("[data-count]").forEach(function (el) {
+      var target = Number(el.dataset.count), d = Number(el.dataset.d || 2), fmt = el.dataset.signed ? signed : num;
+      if (reduce || !isFinite(target)) { el.textContent = fmt(target, d); return; }
+      var t0 = performance.now(), dur = 800;
+      (function step(now) {
+        var k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+        el.textContent = fmt(target * e, d);
+        if (k < 1) requestAnimationFrame(step);
+      })(t0);
+    });
+    fillMeters(root);
+  }
+  function fillMeters(root) {
+    var bars = (root || document).querySelectorAll("i[data-w]");
+    bars.forEach(function (i) { i.style.transition = "none"; i.style.transform = "scaleX(0)"; });
+    requestAnimationFrame(function () { requestAnimationFrame(function () { bars.forEach(function (i) { i.style.transition = ""; i.style.transform = "scaleX(" + Math.min(100, Number(i.dataset.w)) / 100 + ")"; }); }); });
+  }
+
+  // ---------------------------------------------------------------- data views
+  function portfolios() { return Object.keys(D.portfolios || {}); }
+  function totalHoldings() { return portfolios().reduce(function (s, n) { return s + (D.portfolios[n].holdings || []).length; }, 0); }
+  function totalTrades() { return portfolios().reduce(function (s, n) { return s + (D.portfolios[n].trades || []).length; }, 0); }
+  function watchSymbols() { var wl = D.watchlist || {}; return [].concat(wl.set_tickers || [], wl.us_tickers || []); }
+  function latestReport() { var r = (D.reports || []).filter(function (x) { return !x.weekly; }); return r.length ? r[r.length - 1] : null; }
+  function priceMap() { var m = {}; (D.prices || []).forEach(function (r) { m[r.symbol] = r; }); return m; }
+  function qualityLamp() {
+    var q = D.quality || {};
+    if (!q.status) return { cls: "", text: "ยังไม่มีข้อมูลตลาดสำหรับพอร์ตนี้" };
+    var ok = q.status === "ok";
+    return { cls: ok ? "ok" : "warn", text: (ok ? "ข้อมูลครบ" : "ข้อมูลบางส่วน") + " · ราคา " + (q.priced || 0) + "/" + (q.tickers || 0) + (q.jitta_available ? " · Jitta " + q.jitta_available : "") };
+  }
+
+  function renderRail() {
+    var lamp = qualityLamp();
+    $("rail-sub").innerHTML = '<span class="lamp ' + lamp.cls + '"></span>' + esc(D.latest_date || "no data");
+    var h = "";
+    portfolios().forEach(function (name) {
+      var p = D.portfolios[name], a = p.account || {}, r = p.rollup || {}, ccy = p.meta.currency || "";
+      var util = isNum(r.margin_utilization_pct) ? Number(r.margin_utilization_pct) : null;
+      var breaches = String(r.breaches || "").split(";").map(function (s) { return s.trim(); }).filter(Boolean);
+      h += '<div class="tele"><div class="name"><b>' + esc(name) + "</b><span>" + esc(ccy) + " · " + esc(p.meta.type || "") + "</span></div>";
+      h += '<div class="big"><span data-count="' + (Number(a.total_balance) || 0) + '">0</span><small>' + esc(ccy) + "</small></div>";
+      h += '<div class="grid">' +
+        '<div><span class="lbl">ลงทุน</span><div class="v"><span data-count="' + (Number(a.invest_balance) || 0) + '" data-d="2">0</span></div></div>' +
+        '<div><span class="lbl">เงินสด</span><div class="v"><span data-count="' + (Number(a.cash_balance) || 0) + '" data-d="2">0</span></div></div>' +
+        '<div><span class="lbl">กำไรสะสม</span><div class="v"><span class="' + cls(a.total_pnl_amount) + '"><span data-count="' + (Number(a.total_pnl_amount) || 0) + '" data-d="2" data-signed="1">0</span></span> <span class="dim">' + (isNum(a.total_pnl_percent) ? signed(a.total_pnl_percent) + "%" : "") + "</span></div></div>" +
+        '<div><span class="lbl">ยังไม่ขาย</span><div class="v">' + pct(r.unrealized_pnl_pct) + "</div></div>" +
+        "</div>";
+      if (util != null) h += '<div class="lbl" style="margin-top:12px;display:flex;justify-content:space-between"><span>margin ใช้</span><span class="n">' + num(util, 0) + '%</span></div><div class="meter' + (util >= 90 ? " hot" : "") + '"><i data-w="' + Math.min(100, util) + '"></i></div>';
+      if (breaches.length) h += '<div class="breach">' + breaches.map(function (b) { return "<div>" + esc(b) + "</div>"; }).join("") + "</div>";
+      h += "</div>";
+    });
+    if (!portfolios().length) h += '<div class="tele muted">ยังไม่มีพอร์ต</div>';
+    $("rail-tele").innerHTML = h;
+    var sc = D.scorecard || {};
+    $("rail-foot").innerHTML = '<div><span class="lamp ' + lamp.cls + '"></span>' + esc(lamp.text) + "</div>" +
+      (sc.evaluated ? '<div>ความแม่นของระบบ <span class="n">' + num((sc.hit_rate || 0) * 100, 0) + "%</span> จาก <span class=\"n\">" + sc.evaluated + "</span> คำตัดสิน</div>" : "") +
+      '<div>สร้าง <span class="n">' + esc((D.generated_at || "").replace("T", " ").slice(0, 16)) + " UTC</span></div>";
+  }
+
+  function renderStrip() {
+    var h = "";
+    portfolios().forEach(function (name) {
+      var p = D.portfolios[name], a = p.account || {}, r = p.rollup || {}, ccy = p.meta.currency || "";
+      h += '<div class="tile"><span class="lbl">' + esc(name) + ' · รวม</span><div class="v"><span data-count="' + (Number(a.total_balance) || 0) + '">0</span></div><div class="s">' + esc(ccy) + "</div></div>";
+      h += '<div class="tile"><span class="lbl">กำไรสะสม</span><div class="v ' + cls(a.total_pnl_amount) + '"><span data-count="' + (Number(a.total_pnl_amount) || 0) + '" data-d="2" data-signed="1">0</span></div><div class="s">' + (isNum(a.total_pnl_percent) ? signed(a.total_pnl_percent) + "%" : "–") + "</div></div>";
+      h += '<div class="tile"><span class="lbl">ยังไม่ขาย</span><div class="v">' + pct(r.unrealized_pnl_pct) + '</div><div class="s">' + (p.holdings || []).length + " สถานะ</div></div>";
+      h += '<div class="tile"><span class="lbl">เงินสด</span><div class="v"><span data-count="' + (Number(a.cash_balance) || 0) + '" data-d="2">0</span></div><div class="s">ลงทุน ' + num(a.invest_balance) + "</div></div>";
+      if (isNum(r.margin_utilization_pct)) h += '<div class="tile"><span class="lbl">margin ใช้</span><div class="v ' + (Number(r.margin_utilization_pct) >= 90 ? "warn" : "") + '">' + num(r.margin_utilization_pct, 0) + "%</div></div>";
+    });
+    $("strip").innerHTML = h;
+  }
+
+  function renderToday() {
+    var reps = D.reports || [], daily = latestReport();
+    var weekly = reps.filter(function (x) { return x.weekly; }).slice(-1)[0];
+    if (!daily && !weekly) {
+      $("v-today").innerHTML = empty("ยังไม่มีรายงานเช้า", "Claude routine จะเขียนรายงานแรกในรอบถัดไป (จันทร์–เสาร์ ~08:30 น.) ตัวเลขพอร์ตดูได้ที่แถบด้านซ้าย");
+      return;
+    }
+    var h = "", cur = daily || weekly;
+    var showWeekly = weekly && (!daily || weekly.date >= daily.date);
+    h += '<div class="digest-head">';
+    if (daily && weekly) h += '<div class="seg" id="today-seg"><button type="button" class="on" data-k="d">รายวัน ' + esc(daily.date) + '</button><button type="button" data-k="w">สัปดาห์ ' + esc(weekly.date) + "</button></div>";
+    var v = (D.verdicts || []).slice(-1)[0];
+    var changes = lastChanges();
+    h += '<div class="status">' + (daily && weekly ? "" : '<span><span class="lamp ok"></span>' + esc(cur.weekly ? "สรุปสัปดาห์" : "รายวัน") + ' <span class="n">' + esc(cur.date) + "</span></span>") +
+         (changes.length ? '<span><span class="lamp warn"></span>มุมมองเปลี่ยน: <span class="n">' + changes.map(esc).join(" · ") + "</span></span>" : "") + "</div>";
+    h += "</div>";
+    h += '<div class="today"><div class="digest" id="digest"></div><div class="side">';
+    if (v && v.verdicts) {
+      var rows = Object.keys(v.verdicts).map(function (s) { return { s: s, view: v.verdicts[s].view, score: v.verdicts[s].score, why: v.verdicts[s].why || v.verdicts[s].reason || "" }; })
+        .sort(function (a, b) { return (Number(b.score) || 0) - (Number(a.score) || 0); });
+      h += '<h3 class="sec">คำตัดสินวันนี้ · ' + esc(v.date || "") + "</h3>" + table([
+        { label: "Symbol", key: "s", sym: true }, { label: "มุมมอง", raw: true, get: function (r) { return view(r.view); } },
+        { label: "คะแนน", num: true, get: function (r) { return isNum(r.score) ? num(r.score, 0) : ""; } },
+        { label: "เหตุผล", key: "why", wrap: true, opt: true }], rows);
+    }
+    h += "</div></div>";
+    $("v-today").innerHTML = h;
+    function put(r) { $("digest").innerHTML = tg(r.text); }
+    put(showWeekly && !daily ? weekly : daily);
+    if ($("today-seg")) $("today-seg").querySelectorAll("button").forEach(function (b) {
+      b.addEventListener("click", function () { $("today-seg").querySelectorAll("button").forEach(function (x) { x.classList.toggle("on", x === b); }); put(b.dataset.k === "w" ? weekly : daily); });
+    });
+  }
+  function lastChanges() {
+    var vs = D.verdicts || []; if (vs.length < 2) return [];
+    var a = vs[vs.length - 2].verdicts || {}, b = vs[vs.length - 1].verdicts || {}, out = [];
+    Object.keys(b).forEach(function (s) { if (a[s] && a[s].view && b[s].view && a[s].view !== b[s].view) out.push(s + " " + a[s].view + " → " + b[s].view); });
+    return out;
+  }
+
+  function renderHoldings() {
+    var h = "";
+    portfolios().forEach(function (name) {
+      var p = D.portfolios[name], rows = p.holdings || [], ccy = p.meta.currency || "";
+      var invested = rows.reduce(function (s, r) { return s + (Number(r.margin) || 0); }, 0);
+      h += '<h3 class="sec">' + esc(name) + " · " + esc(ccy) + "</h3>";
+      if (!rows.length) { h += empty("พอร์ตนี้ยังว่าง", "บันทึกซื้อจากฟอร์มใน Telegram หรือ portfolio.py แล้วรายการจะมาอยู่ที่นี่"); return; }
+      h += tl([["สถานะ", rows.length + " ตัว"], ["เงินลงทุน", num(invested), ccy], ["ยังไม่ขาย", pct((p.rollup || {}).unrealized_pnl_pct), null, true],
+               ["เซกเตอร์เด่น", (p.rollup || {}).top_sector || "", isNum((p.rollup || {}).top_sector_pct) ? num((p.rollup || {}).top_sector_pct, 0) + "%" : ""]]);
+      h += table([
+        { label: "Symbol", key: "symbol", sym: true }, { label: "Sector", key: "sector", opt: true },
+        { label: "Qty", num: true, opt: true, get: function (r) { return isNum(r.qty) && Number(r.qty) ? num(r.qty, 2) : ""; } },
+        { label: "ทุน", num: true, get: function (r) { return num(r.avg_price); } },
+        { label: "ล่าสุด", num: true, get: function (r) { return num(r.last_price); } },
+        { label: "P&L %", num: true, raw: true, get: function (r) { return pct(r.unrealized_pnl_pct); } },
+        { label: "P&L", num: true, raw: true, opt: true, get: function (r) { return money(r.unrealized_pnl_amt); } },
+        { label: "ลงทุน", num: true, get: function (r) { return num(r.margin); } },
+        { label: "Jitta", num: true, opt: true, get: function (r) { return num(r.jitta_score, 1); } },
+        { label: "vs Line", num: true, raw: true, opt: true, get: function (r) { return line(r.jitta_line_pct, 0); } },
+        { label: "RSI", num: true, opt: true, get: function (r) { return num(r.rsi_14, 0); } },
+        { label: "งบถัดไป", key: "next_earnings", opt: true }, { label: "เข้า", key: "entry_date" }, { label: "โน้ต", key: "note", wrap: true, opt: true }], rows);
+    });
+    $("v-holdings").innerHTML = h || empty("ยังไม่มีพอร์ต", "สร้างด้วย portfolio.py portfolios create <ชื่อ> <สกุลเงิน>");
+  }
+
+  function renderTrades() {
+    var h = "";
+    portfolios().forEach(function (name) {
+      var p = D.portfolios[name], tr = p.trades || [], tx = p.transactions || [], ccy = p.meta.currency || "";
+      var wins = tr.filter(function (t) { return Number(t.realized_pnl) > 0; }).length;
+      var total = tr.reduce(function (s, t) { return s + (Number(t.realized_pnl) || 0); }, 0);
+      h += '<h3 class="sec">' + esc(name) + " · " + esc(ccy) + "</h3>";
+      if (tr.length) {
+        h += tl([["รอบที่ปิด", tr.length + " รอบ"], ["ชนะ", wins + "/" + tr.length, num(wins / tr.length * 100, 0) + "%"], ["P&L ที่รับรู้", money(total), ccy, true]]);
+        h += table([
+          { label: "ปิด", key: "close_date" }, { label: "Symbol", key: "symbol", sym: true },
+          { label: "Qty", num: true, opt: true, get: function (r) { return isNum(r.qty) && Number(r.qty) ? num(r.qty, 2) : ""; } },
+          { label: "เข้า", num: true, get: function (r) { return num(r.avg_entry); } }, { label: "ออก", num: true, get: function (r) { return num(r.exit_price); } },
+          { label: "P&L", num: true, raw: true, get: function (r) { return money(r.realized_pnl); } },
+          { label: "%", num: true, raw: true, get: function (r) { return pct(r.realized_pct); } },
+          { label: "วันถือ", num: true, key: "holding_days" }, { label: "เปิด", key: "open_date" }], tr.slice().reverse());
+      } else h += empty("ยังไม่มีรอบเทรดที่ปิด", "ระบบบันทึกให้เองเมื่อสั่งขาย");
+      h += '<h3 class="sec">ledger ล่าสุด</h3>';
+      h += tx.length ? table([{ label: "#", num: true, key: "id" }, { label: "วันที่", key: "datetime" }, { label: "Symbol", key: "symbol", sym: true },
+        { label: "ฝั่ง", raw: true, get: function (r) { return view(r.side); } },
+        { label: "Qty", num: true, opt: true, get: function (r) { return isNum(r.qty) && Number(r.qty) ? num(r.qty, 2) : ""; } },
+        { label: "ราคา", num: true, get: function (r) { return num(r.price); } }, { label: "โน้ต", key: "note", wrap: true, opt: true }], tx.slice().reverse().slice(0, 40))
+        : empty("ยังไม่มีรายการ", "");
+    });
+    $("v-trades").innerHTML = h || empty("ยังไม่มีพอร์ต", "");
+  }
+
+  function renderReports() {
+    var reps = (D.reports || []).slice().reverse();
+    if (!reps.length) { $("v-reports").innerHTML = empty("ยังไม่มีรายงานในคลัง", "เก็บย้อนหลัง 60 ฉบับล่าสุด"); return; }
+    var h = '<div class="archive"><div class="list" id="rep-list">' + reps.map(function (r, i) {
+      return '<button type="button" data-i="' + i + '"' + (i === 0 ? ' class="on"' : "") + ">" + esc(r.date) + (r.weekly ? '<span class="w">WEEK</span>' : "") + "</button>";
+    }).join("") + '</div><div class="digest" id="rep-body"></div></div>';
+    $("v-reports").innerHTML = h;
+    function showRep(i) {
+      document.querySelectorAll("#rep-list button").forEach(function (b) { b.classList.toggle("on", Number(b.dataset.i) === i); });
+      $("rep-body").innerHTML = tg(reps[i].text);
+    }
+    document.querySelectorAll("#rep-list button").forEach(function (b) { b.addEventListener("click", function () { showRep(Number(b.dataset.i)); }); });
+    showRep(0);
+  }
+
+  function renderLearning() {
+    var h = "", sc = D.scorecard || {};
+    h += '<h3 class="sec">Scorecard ของระบบ</h3>';
+    if (sc.evaluated) {
+      h += tl([["คำตัดสินที่ประเมิน", String(sc.evaluated), "ถึง " + (sc.as_of || "–")], ["แม่น", num((sc.hit_rate || 0) * 100, 0) + "%", "เทียบดัชนีตลาด"], ["ผลตอบแทนเฉลี่ย", pct(sc.avg_return), "forward", true]]);
+      if (sc.by_view) {
+        h += '<div class="panel"><span class="lbl">แม่นแยกตามมุมมอง · เส้นประ = เกณฑ์ 60%</span><div class="bars">' + Object.keys(sc.by_view).map(function (k) {
+          var b = sc.by_view[k], r = (b.hit_rate || 0) * 100;
+          return '<div class="bar-row"><span>' + view(k) + '</span><div class="t"><i class="' + (r < 40 ? "low" : r < 60 ? "mid" : "") + '" data-w="' + r.toFixed(1) + '"></i></div><span class="n muted">' + num(r, 0) + "% · n=" + b.n + "</span></div>";
+        }).join("") + "</div></div>";
+      }
+      if (sc.hints && sc.hints.length) h += '<div class="panel" style="margin-top:14px"><span class="lbl">กฎที่ระบบสรุปจากผลงานตัวเอง</span><ul class="hints">' + sc.hints.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul></div>";
+    } else h += empty("ยังไม่มีคำตัดสินพอให้ประเมิน", "ต้องมี verdict ที่ครบ 5 วันซื้อขายขึ้นไปก่อน");
+    var w = (D.weekly || []).slice().reverse();
+    h += '<h3 class="sec">สรุปรายสัปดาห์</h3>';
+    h += w.length ? table([
+      { label: "สัปดาห์", get: function (r) { return (r.week_start || "") + " → " + (r.as_of || ""); } },
+      { label: "พอร์ต", raw: true, get: function (r) { return Object.keys(r.portfolios || {}).map(function (n) { return esc(n) + " " + pct(r.portfolios[n].week_return_pct); }).join(" · ") || '<span class="dim">–</span>'; } },
+      { label: "S&P 500", num: true, raw: true, get: function (r) { return pct((r.benchmarks || {})["S&P 500"]); } },
+      { label: "SET", num: true, raw: true, get: function (r) { return pct((r.benchmarks || {})["SET Index"]); } },
+      { label: "ดีล", num: true, get: function (r) { return (r.trades || []).length; } },
+      { label: "มุมมองเปลี่ยน", wrap: true, get: function (r) { return (r.verdict_changes || []).map(function (c) { return c.symbol + " " + c.from + "→" + c.to; }).join(", "); } }], w)
+      : empty("ยังไม่มีสรุปสัปดาห์", "สร้างทุกวันเสาร์");
+    if (D.lessons) h += '<h3 class="sec">LESSONS.md</h3><div class="panel lesson">' + esc(D.lessons) + "</div>";
+    $("v-learning").innerHTML = h;
+  }
+
+  function renderJitta() {
+    var h = "", jp = D.jitta_picks || {}, o = jp.overall || {};
+    h += '<h3 class="sec">ผลของหุ้นที่ Jitta คัด</h3>';
+    if (jp.evaluated) {
+      h += tl([["ประเมินแล้ว", String(jp.evaluated), "ถึง " + (jp.as_of || "–")], ["ชนะตลาด", num((o.hit_rate || 0) * 100, 0) + "%", "excess > 0"],
+               ["ผลตอบแทนเฉลี่ย", pct(o.avg_return), null, true], ["excess เฉลี่ย", pct(o.avg_excess), "เทียบดัชนี", true]]);
+      var rows = (jp.best || []).concat(jp.worst || []);
+      if (rows.length) h += '<div style="margin-top:14px">' + table([{ label: "วันที่", key: "date" }, { label: "Symbol", key: "symbol", sym: true }, { label: "เกรด", raw: true, get: function (r) { return '<span class="grade">' + esc(r.grade || "–") + "</span>"; } },
+        { label: "ผลตอบแทน", num: true, raw: true, get: function (r) { return pct(r.return_pct); } }, { label: "excess", num: true, raw: true, get: function (r) { return pct(r.excess_pct); } }, { label: "วัน", num: true, key: "days" }], rows) + "</div>";
+    } else h += empty("ยังไม่มีตัวที่ครบกำหนดประเมิน", "ตัวที่คัดจะถูกวัดผลเทียบดัชนีเมื่อผ่านไปหลายสัปดาห์");
+    var cand = D.watch_candidates || {}, candRows = Object.keys(cand).map(function (s) { return Object.assign({ symbol: s }, cand[s]); });
+    h += '<h3 class="sec">คัดเข้า watchlist แล้ว · ยังไม่ซื้อ</h3>';
+    h += candRows.length ? table([{ label: "Symbol", key: "symbol", sym: true }, { label: "ตลาด", key: "market" }, { label: "เพิ่ม", key: "added" }, { label: "หมดอายุ", key: "expires" },
+      { label: "Jitta", num: true, get: function (r) { return num(r.jitta_score, 1); } }, { label: "รวม", num: true, get: function (r) { return num(r.total_score, 0); } }, { label: "เหตุผล", key: "reason", wrap: true }], candRows)
+      : empty("ยังไม่มีตัวที่คัด", "Claude เลือกจาก pool ทุกวันเสาร์ สูงสุด 10 ตัว หมดอายุใน 28 วันถ้าไม่ซื้อ");
+    var pool = D.jitta_pool || [];
+    h += '<h3 class="sec">Pool ล่าสุด · ' + (pool.length ? esc(pool[0].date || "") + " · " : "") + "30 อันดับแรก</h3>";
+    h += pool.length ? table([{ label: "#", num: true, key: "rank" }, { label: "Symbol", key: "yahoo_symbol", sym: true }, { label: "บริษัท", key: "company_name", wrap: true }, { label: "ตลาด", key: "market" }, { label: "เซกเตอร์", key: "sector" },
+      { label: "รวม", num: true, get: function (r) { return num(r.total_score, 0); } }, { label: "เกรด", raw: true, get: function (r) { return '<span class="grade">' + esc(r.grade || "–") + "</span>"; } },
+      { label: "Jitta", num: true, get: function (r) { return num(r.jitta_score, 1); } }, { label: "vs Line", num: true, raw: true, get: function (r) { return line(r.price_diff, 0); } },
+      { label: "loss", num: true, get: function (r) { return num(r.loss_chance, 0); } }], pool) : empty("ยังไม่มี pool", "workflow Weekly Jitta Screen สร้างทุกวันเสาร์");
+    var hist = D.jitta_history || [];
+    if (hist.length) {
+      var by = {};
+      hist.forEach(function (r) { (by[r.symbol] = by[r.symbol] || []).push(r); });
+      h += '<h3 class="sec">Jitta Score ย้อนหลัง · ตัวที่ถือและเฝ้า</h3>' + table([{ label: "Symbol", key: "symbol", sym: true }, { label: "จุด", num: true, key: "n" }, { label: "แรก", num: true, key: "first" }, { label: "ล่าสุด", num: true, key: "last" },
+        { label: "เปลี่ยน", num: true, raw: true, get: function (r) { return pct(r.chg, 1); } }, { label: "vs Line ล่าสุด", num: true, raw: true, get: function (r) { return line(r.line, 0); } }],
+        Object.keys(by).map(function (s) { var a = by[s], f = Number(a[0].jitta_score), l = Number(a[a.length - 1].jitta_score); return { symbol: s, n: a.length, first: num(f, 1), last: num(l, 1), chg: (isNaN(f) || isNaN(l) || !f) ? null : ((l / f - 1) * 100), line: a[a.length - 1].jitta_line_pct }; }));
+    }
+    $("v-jitta").innerHTML = h;
+  }
+
+  function renderWatch() {
+    var wl = D.watchlist || {}, prices = priceMap(), syms = watchSymbols();
+    var h = '<h3 class="sec">Watchlist · ' + syms.length + " ตัว</h3>";
+    h += syms.length ? table([{ label: "Symbol", key: "symbol", sym: true }, { label: "Sector", get: function (r) { return (prices[r.symbol] || {}).sector || ""; } },
+      { label: "ราคา", num: true, get: function (r) { return num((prices[r.symbol] || {}).current_price); } }, { label: "PE", num: true, get: function (r) { return num((prices[r.symbol] || {}).pe, 1); } },
+      { label: "RSI", num: true, get: function (r) { return num((prices[r.symbol] || {}).rsi_14, 0); } }, { label: "Jitta", num: true, get: function (r) { return num((prices[r.symbol] || {}).jitta_score, 1); } },
+      { label: "vs Line", num: true, raw: true, get: function (r) { return line((prices[r.symbol] || {}).jitta_line_pct, 0); } }, { label: "เป้านักวิเคราะห์", num: true, get: function (r) { return num((prices[r.symbol] || {}).target_mean_price); } },
+      { label: "งบถัดไป", get: function (r) { return (prices[r.symbol] || {}).next_earnings || ""; } }], syms.map(function (s) { return { symbol: s }; }))
+      : empty("Watchlist ว่าง", "เพิ่มจากฟอร์มใน Telegram (เฝ้ามอง) หรือรอ Jitta คัดให้วันเสาร์");
+    if (wl.risk_limits) {
+      var keys = Object.keys(wl.risk_limits).filter(function (k) { return k[0] !== "_"; });
+      h += '<h3 class="sec">เพดานความเสี่ยง</h3>' + tl(keys.map(function (k) { return [k.replace(/_/g, " "), num(wl.risk_limits[k], 0) + "%"]; }));
+    }
+    $("v-watch").innerHTML = h;
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+{
+  "portfolios": [
+    {
+      "name": "beatking",
+      "currency": "USD",
+      "type": "stock"
+    }
+  ],
+  "default": "beatking",
+  "held": [
+    "NVO",
+    "UHS",
+    "FDS",
+    "CRM",
+    "AMZN"
+  ],
+  "held_by_portfolio": {
+    "beatking": [
+      "NVO",
+      "UHS",
+      "FDS",
+      "CRM",
+      "AMZN"
+    ]
+  },
+  "watch": [
+    "MOSHI.BK",
+    "SISB.BK",
+    "MBK.BK",
+    "AMATA.BK",
+    "TOA.BK",
+    "INTU",
+    "HIG",
+    "AEM",
+    "TME",
+    "LRN"
+  ],
+  "generated_at": "2026-09-09T16:35:44+00:00"
+}
