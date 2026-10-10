@@ -1,0 +1,98 @@
+{
+  "portfolios": [
+    {
+      "name": "beatking",
+      "currency": "USD",
+      "type": "stock"
+    }
+  ],
+  "default": "beatking",
+  "held": [
+    "NVO",
+    "UHS",
+    "FDS",
+    "CRM",
+    "AMZN",
+    "INTU"
+  ],
+  "held_by_portfolio": {
+    "beatking": [
+      "NVO",
+      "UHS",
+      "FDS",
+      "CRM",
+      "AMZN",
+      "INTU"
+    ]
+  },
+  "watch": [
+    "COM7.BK",
+    "MRDIYT.BK",
+    "CREDIT.BK",
+    "CPN.BK",
+    "HMY",
+    "AFYA",
+    "SLDE",
+    "ESEA",
+    "GMED",
+    "SPSC",
+    "TIMB",
+    "KNSL",
+    "ATAT",
+    "HCA",
+    "BZ",
+    "WDAY",
+    "FSS"
+  ],
+  "sizing": {
+    "beatking": {
+      "currency": "USD",
+      "as_of": "2026-09-17",
+      "cash_available": 144.0,
+      "max_new_buy_amt": 95.54,
+      "size_starter_amt": 12.74,
+      "size_normal_amt": 31.85,
+      "size_high_amt": 63.69,
+      "min_order_amt": 10.0
+    }
+  },
+  "plans": {
+    "NVO": {
+      "date": "2026-10-09",
+      "view": "SELL",
+      "score": 27.0,
+      "stop": 36.0
+    },
+    "UHS": {
+      "date": "2026-10-09",
+      "view": "HOLD",
+      "score": 58.0,
+      "stop": 166.0
+    },
+    "FDS": {
+      "date": "2026-10-09",
+      "view": "HOLD",
+      "score": 62.0,
+      "stop": 258.0
+    },
+    "CRM": {
+      "date": "2026-10-09",
+      "view": "HOLD",
+      "score": 54.0,
+      "stop": 210.0
+    },
+    "AMZN": {
+      "date": "2026-10-09",
+      "view": "HOLD",
+      "score": 55.0,
+      "stop": 238.0
+    },
+    "INTU": {
+      "date": "2026-10-09",
+      "view": "HOLD",
+      "score": 36.0,
+      "stop": 270.0
+    }
+  },
+  "generated_at": "2026-10-10T02:39:52+00:00"
+}
