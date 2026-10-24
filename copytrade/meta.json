@@ -1,0 +1,9 @@
+{
+  "generated_at": "2026-10-24T10:16:34.667Z",
+  "latest_date": "2026-10-24",
+  "encrypted": true,
+  "kdf": "PBKDF2-SHA256",
+  "iterations": 200000,
+  "fx_date": "2026-10-25",
+  "fx_source": "Frankfurter daily reference rates; USDT≈USD peg for display only"
+}
