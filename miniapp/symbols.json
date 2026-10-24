@@ -1,0 +1,16 @@
+{
+  "portfolios": [
+    {
+      "name": "beatking",
+      "currency": "USD",
+      "type": "stock"
+    }
+  ],
+  "default": "beatking",
+  "held": ["NVO", "UHS", "FDS", "CRM", "AMZN"],
+  "held_by_portfolio": {
+    "beatking": ["NVO", "UHS", "FDS", "CRM", "AMZN"]
+  },
+  "watch": [],
+  "generated_at": "2026-09-05T08:59:13+00:00"
+}

@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Stock Port · Report</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<style>
+  :root { --bg:#f4f1ea; --fg:#1c1a17; --muted:#6b6560; --card:#fff; --line:#d9d3c7; --accent:#1f8a86; --up:#1a7f4b; --down:#b3261e; --warn:#b26a00; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.45 system-ui,-apple-system,"Segoe UI","Noto Sans Thai",sans-serif; }
+  header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 20px; border-bottom:1px solid var(--fg); background:var(--bg); position:sticky; top:0; z-index:5; }
+  header h1 { font-size:18px; margin:0; }
+  header .meta { font-size:12px; color:var(--muted); }
+  nav { display:flex; gap:6px; flex-wrap:wrap; padding:10px 20px 0; }
+  nav button { border:1px solid var(--line); background:var(--card); color:var(--fg); padding:8px 12px; border-radius:8px; font-size:14px; cursor:pointer; }
+  nav button.on { background:var(--fg); color:var(--bg); border-color:var(--fg); }
+  main { padding:16px 20px 60px; max-width:1200px; margin:0 auto; }
+  section { display:none; } section.on { display:block; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .card h3 { margin:0 0 8px; font-size:15px; display:flex; justify-content:space-between; }
+  .kv { display:grid; grid-template-columns:auto 1fr; gap:4px 12px; font-size:13px; }
+  .kv span:nth-child(odd) { color:var(--muted); }
+  .kv b { font-weight:600; }
+  table { width:100%; border-collapse:collapse; background:var(--card); border:1px solid var(--line); font-size:13px; }
+  th, td { padding:7px 9px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap; }
+  th { background:#faf8f3; color:var(--muted); font-weight:600; cursor:pointer; position:sticky; top:0; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .up { color:var(--up); } .down { color:var(--down); } .warn { color:var(--warn); }
+  .wrap { overflow:auto; border-radius:10px; }
+  .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid var(--line); background:#faf8f3; margin:2px 4px 2px 0; }
+  .pill.bad { border-color:var(--down); color:var(--down); }
+  .md { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 20px; overflow-x:auto; }
+  .md pre { background:#faf8f3; padding:10px; overflow-x:auto; font-size:12.5px; }
+  .list { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+  .list button { border:1px solid var(--line); background:var(--card); padding:5px 9px; border-radius:6px; font-size:12px; cursor:pointer; }
+  .list button.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+  h2 { font-size:16px; margin:22px 0 10px; }
+  .muted { color:var(--muted); font-size:13px; }
+  #gate { max-width:420px; margin:80px auto; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:24px; }
+  #gate input { width:100%; font-size:17px; padding:12px; border:1px solid var(--line); border-radius:10px; margin:10px 0; }
+  #gate button { width:100%; font-size:16px; padding:12px; border-radius:10px; border:0; background:var(--accent); color:#fff; cursor:pointer; }
+  #gate .err { color:var(--down); min-height:20px; font-size:13px; }
+  .hint { font-size:12px; color:var(--muted); margin-top:8px; }
+  .lesson { white-space:pre-wrap; font-size:13px; }
+  body.embedded-report .site-links { display:none; }
+  @media (max-width:640px) { header { flex-direction:column; align-items:flex-start; } }
+</style>
+<link rel="stylesheet" href="../assets/report-theme.css">
+</head>
+<body>
+<div id="gate">
+  <h2 style="margin-top:0">Stock Port · รายงาน</h2>
+  <p class="muted" id="gate-msg">ใส่รหัสผ่านเพื่อถอดรหัสข้อมูล (ถอดในเครื่องคุณ ไม่ส่งไปที่ไหน)</p>
+  <input id="pass" type="password" placeholder="รหัสผ่าน" autocomplete="current-password">
+  <button id="open">เปิดรายงาน</button>
+  <div class="err" id="gate-err"></div>
+  <div class="hint" id="gate-meta"></div>
+</div>
+
+<div id="app" hidden>
+  <header class="report-header">
+    <h1>STOCK PORT · REPORT</h1>
+    <nav class="site-links" aria-label="เมนูหลัก"><a href="../">ภาพรวม</a><a href="./" aria-current="page">หุ้น</a><a href="../copytrade/">Copy Quant</a><a href="./#reports">รายงาน</a></nav>
+    <div class="meta" id="meta"></div>
+  </header>
+  <nav id="nav"></nav>
+  <main>
+    <section data-tab="overview"><div id="overview"></div></section>
+    <section data-tab="holdings"><div id="holdings"></div></section>
+    <section data-tab="trades"><div id="trades"></div></section>
+    <section data-tab="reports"><div id="reports"></div></section>
+    <section data-tab="learning"><div id="learning"></div></section>
+    <section data-tab="jitta"><div id="jitta"></div></section>
+    <section data-tab="watch"><div id="watch"></div></section>
+  </main>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var TABS = [["overview","ภาพรวม"],["holdings","สถานะ"],["trades","ดีล"],["reports","รายงาน"],["learning","การเรียนรู้"],["jitta","Jitta"],["watch","Watchlist"]];
+  var D = null;
+  var embedded = new URLSearchParams(location.search).get("embed") === "1";
+  var inheritedPass = null, unlockAttempt = null;
+  if (embedded) {
+    document.body.classList.add("embedded-report");
+    window.addEventListener("message", function (event) {
+      if (event.origin !== location.origin || event.source !== parent || !event.data || event.data.type !== "portfolio-unlock") return;
+      inheritedPass = event.data.password || "";
+      if (unlockAttempt && inheritedPass) { $("pass").value = inheritedPass; unlockAttempt(); }
+    });
+    parent.postMessage({ type: "portfolio-ready" }, location.origin);
+  }
+
+  // ---------------------------------------------------------------- helpers
+  function esc(s) { return String(s == null ? "" : s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+  function num(v, d) { if (v == null || v === "" || isNaN(Number(v))) return "–"; return Number(v).toLocaleString(undefined, {maximumFractionDigits: d == null ? 2 : d}); }
+  function pct(v) { if (v == null || v === "" || isNaN(Number(v))) return "–"; var n = Number(v); return '<span class="' + (n > 0 ? "up" : n < 0 ? "down" : "") + '">' + (n > 0 ? "+" : "") + n.toFixed(2) + "%</span>"; }
+  function table(cols, rows, opts) {
+    opts = opts || {};
+    var h = '<div class="wrap"><table><thead><tr>' + cols.map(function (c) { return '<th class="' + (c.num ? "num" : "") + '">' + esc(c.label) + "</th>"; }).join("") + "</tr></thead><tbody>";
+    rows.forEach(function (r) {
+      h += "<tr>" + cols.map(function (c) { var v = typeof c.get === "function" ? c.get(r) : r[c.key]; return '<td class="' + (c.num ? "num" : "") + '">' + (c.raw ? v : esc(v == null ? "" : v)) + "</td>"; }).join("") + "</tr>";
+    });
+    return h + "</tbody></table></div>" + (rows.length ? "" : '<p class="muted">ไม่มีข้อมูล</p>');
+  }
+  function kv(pairs) { return '<div class="kv">' + pairs.map(function (p) { return "<span>" + esc(p[0]) + "</span><b>" + (p[2] ? p[1] : esc(p[1])) + "</b>"; }).join("") + "</div>"; }
+
+  // ---------------------------------------------------------------- crypto gate
+  function b64(s) { var bin = atob(s), u = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; }
+  async function decrypt(blob, pass) {
+    var enc = new TextEncoder();
+    var base = await crypto.subtle.importKey("raw", enc.encode(pass), "PBKDF2", false, ["deriveKey"]);
+    var key = await crypto.subtle.deriveKey({ name: "PBKDF2", salt: b64(blob.salt), iterations: blob.iterations || 200000, hash: "SHA-256" },
+                                            base, { name: "AES-GCM", length: 256 }, false, ["decrypt"]);
+    var pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: b64(blob.iv) }, key, b64(blob.ct));
+    return JSON.parse(new TextDecoder().decode(pt));
+  }
+  async function boot() {
+    if (embedded) {
+      document.querySelectorAll(".site-links a").forEach(function (link) {
+        link.addEventListener("click", function (event) {
+          var url = new URL(link.href, location.href), route = "home";
+          if (url.pathname.indexOf("/report") >= 0) route = url.hash === "#reports" ? "reports" : "stock";
+          else if (url.pathname.indexOf("/copytrade") >= 0) route = "copyquant";
+          event.preventDefault(); parent.postMessage({ type: "portfolio-route", route: route }, location.origin);
+        });
+      });
+    }
+    var meta = await fetch("./meta.json", { cache: "no-store" }).then(function (r) { return r.json(); }).catch(function () { return null; });
+    if (!meta) { $("gate-err").textContent = "ไม่พบ meta.json — ยังไม่ได้ build รายงาน"; return; }
+    $("gate-meta").textContent = "ข้อมูลล่าสุด " + (meta.latest_date || "?") + " · สร้างเมื่อ " + (meta.generated_at || "?");
+    if (!meta.encrypted) {
+      $("gate-msg").textContent = "ข้อมูลไม่ได้เข้ารหัส (โหมด --plain)";
+      D = await fetch("./site-data.json", { cache: "no-store" }).then(function (r) { return r.json(); });
+      show(); return;
+    }
+    var blob = await fetch("./site-data.json.enc", { cache: "no-store" }).then(function (r) { return r.json(); });
+    async function attempt() {
+      var pass = $("pass").value;
+      if (!pass) return;
+      $("open").disabled = true; $("gate-err").textContent = "กำลังถอดรหัส…";
+      try { D = await decrypt(blob, pass); $("gate-err").textContent = ""; show(); $("pass").value = ""; }
+      catch (e) { $("gate-err").textContent = "รหัสผ่านไม่ถูกต้อง"; }
+      $("open").disabled = false;
+    }
+    if (embedded) {
+      unlockAttempt = attempt;
+      if (inheritedPass) { $("pass").value = inheritedPass; attempt(); }
+    }
+    $("open").addEventListener("click", attempt);
+    $("pass").addEventListener("keydown", function (e) { if (e.key === "Enter") attempt(); });
+    $("pass").focus();
+  }
+
+  // ---------------------------------------------------------------- render
+  function show() {
+    $("gate").hidden = true; $("app").hidden = false;
+    $("meta").textContent = "ข้อมูลล่าสุด " + (D.latest_date || "?") + " · สร้าง " + (D.generated_at || "").replace("T", " ").slice(0, 16) + " UTC";
+    var nav = $("nav");
+    TABS.forEach(function (t, i) {
+      var b = document.createElement("button"); b.textContent = t[1]; b.dataset.tab = t[0];
+      b.addEventListener("click", function () { select(t[0]); });
+      nav.appendChild(b);
+    });
+    renderOverview(); renderHoldings(); renderTrades(); renderReports(); renderLearning(); renderJitta(); renderWatch();
+    select(location.hash.replace("#", "") || "overview");
+  }
+  function select(tab) {
+    document.querySelectorAll("nav button").forEach(function (b) { b.classList.toggle("on", b.dataset.tab === tab); });
+    document.querySelectorAll("section").forEach(function (s) { s.classList.toggle("on", s.dataset.tab === tab); });
+    location.hash = tab;
+  }
+
+  function renderOverview() {
+    var h = "", q = D.quality || {};
+    if (q.status) {
+      h += '<p class="muted">คุณภาพข้อมูลวันล่าสุด: <span class="' + (q.status === "ok" ? "up" : "warn") + '">' + esc(q.status) + "</span> · ราคา " + esc(q.priced) + "/" + esc(q.tickers) + " · Jitta " + esc(q.jitta_available) + (q.issues ? " · " + esc(q.issues) : "") + "</p>";
+    }
+    h += '<div class="cards">';
+    Object.keys(D.portfolios).forEach(function (name) {
+      var p = D.portfolios[name], a = p.account || {}, r = p.rollup || {}, ccy = p.meta.currency || "";
+      var breaches = (r.breaches || "").split(";").map(function (s) { return s.trim(); }).filter(Boolean);
+      h += '<div class="card"><h3>' + esc(name) + "<span class=\"muted\">" + esc(ccy) + " · " + esc(p.meta.type || "") + "</span></h3>";
+      h += kv([["invest", num(a.invest_balance)], ["cash", num(a.cash_balance)], ["total", num(a.total_balance)],
+               ["กำไรสะสม", num(a.total_pnl_amount) + " (" + num(a.total_pnl_percent) + "%)"],
+               ["margin ใช้", (r.margin_utilization_pct ? num(r.margin_utilization_pct, 1) + "%" : "–")],
+               ["P&L ยังไม่ขาย", pct(r.unrealized_pnl_pct), true],
+               ["เซกเตอร์เด่น", (r.top_sector || "–") + (r.top_sector_pct ? " " + num(r.top_sector_pct, 1) + "%" : "")],
+               ["สถานะ", p.holdings.length + " ตัว"]]);
+      if (breaches.length) h += '<div style="margin-top:8px">' + breaches.map(function (b) { return '<span class="pill bad">⚠ ' + esc(b) + "</span>"; }).join("") + "</div>";
+      h += "</div>";
+    });
+    h += "</div>";
+    var sc = D.scorecard || {};
+    if (sc.evaluated) {
+      h += "<h2>ความแม่นของระบบ</h2><div class=\"card\">" + kv([["ประเมินแล้ว", sc.evaluated + " คำตัดสิน"], ["hit-rate", num((sc.hit_rate || 0) * 100, 0) + "%"], ["ผลตอบแทนเฉลี่ย", pct(sc.avg_return), true], ["ถึงวันที่", sc.as_of || "–"]]) +
+           (sc.by_view ? '<div style="margin-top:8px">' + Object.keys(sc.by_view).map(function (v) { var b = sc.by_view[v]; return '<span class="pill">' + esc(v) + " " + num((b.hit_rate || 0) * 100, 0) + "% (n=" + b.n + ")</span>"; }).join("") + "</div>" : "") + "</div>";
+    }
+    $("overview").innerHTML = h;
+  }
+
+  function renderHoldings() {
+    var h = "";
+    Object.keys(D.portfolios).forEach(function (name) {
+      var p = D.portfolios[name];
+      h += "<h2>" + esc(name) + ' <span class="muted">' + esc(p.meta.currency || "") + "</span></h2>";
+      h += table([
+        {label: "Symbol", key: "symbol"}, {label: "Sector", key: "sector"},
+        {label: "Qty", num: true, get: function (r) { return num(r.qty); }},
+        {label: "Avg", num: true, get: function (r) { return num(r.avg_price); }},
+        {label: "Last", num: true, get: function (r) { return num(r.last_price); }},
+        {label: "P&L %", num: true, raw: true, get: function (r) { return pct(r.unrealized_pnl_pct); }},
+        {label: "Margin", num: true, get: function (r) { return num(r.margin); }},
+        {label: "Jitta", num: true, get: function (r) { return num(r.jitta_score); }},
+        {label: "vs Line", num: true, raw: true, get: function (r) { return pct(r.jitta_line_pct); }},
+        {label: "RSI", num: true, get: function (r) { return num(r.rsi_14, 0); }},
+        {label: "งบ", key: "next_earnings"}, {label: "เข้า", key: "entry_date"}, {label: "โน้ต", key: "note"},
+      ], p.holdings);
+    });
+    $("holdings").innerHTML = h || '<p class="muted">ยังไม่มีพอร์ต</p>';
+  }
+
+  function renderTrades() {
+    var h = "";
+    Object.keys(D.portfolios).forEach(function (name) {
+      var p = D.portfolios[name];
+      var wins = p.trades.filter(function (t) { return Number(t.realized_pnl) > 0; }).length;
+      var total = p.trades.reduce(function (s, t) { return s + (Number(t.realized_pnl) || 0); }, 0);
+      h += "<h2>" + esc(name) + ' <span class="muted">รอบเทรดที่ปิด ' + p.trades.length + " · ชนะ " + wins + " · P&L รวม " + num(total) + " " + esc(p.meta.currency || "") + "</span></h2>";
+      h += table([
+        {label: "ปิด", key: "close_date"}, {label: "Symbol", key: "symbol"},
+        {label: "Qty", num: true, get: function (r) { return num(r.qty); }},
+        {label: "เข้า", num: true, get: function (r) { return num(r.avg_entry); }},
+        {label: "ออก", num: true, get: function (r) { return num(r.exit_price); }},
+        {label: "P&L", num: true, raw: true, get: function (r) { var v = Number(r.realized_pnl); return isNaN(v) ? "–" : '<span class="' + (v > 0 ? "up" : v < 0 ? "down" : "") + '">' + num(v) + "</span>"; }},
+        {label: "%", num: true, raw: true, get: function (r) { return pct(r.realized_pct); }},
+        {label: "วันถือ", num: true, key: "holding_days"}, {label: "เปิด", key: "open_date"},
+      ], p.trades.slice().reverse());
+      h += "<h3 class=\"muted\" style=\"margin:10px 0 6px\">ledger ล่าสุด</h3>";
+      h += table([{label: "#", key: "id"}, {label: "วันที่", key: "datetime"}, {label: "Symbol", key: "symbol"}, {label: "ฝั่ง", key: "side"},
+                  {label: "Qty", num: true, get: function (r) { return num(r.qty); }}, {label: "ราคา", num: true, get: function (r) { return num(r.price); }},
+                  {label: "โน้ต", key: "note"}], p.transactions.slice().reverse().slice(0, 40));
+    });
+    $("trades").innerHTML = h || '<p class="muted">ยังไม่มีดีล</p>';
+  }
+
+  function renderReports() {
+    var reps = (D.reports || []).slice().reverse();
+    if (!reps.length) { $("reports").innerHTML = '<p class="muted">ยังไม่มีรายงาน</p>'; return; }
+    var h = '<div class="list" id="rep-list">' + reps.map(function (r, i) { return '<button data-i="' + i + '"' + (i === 0 ? ' class="on"' : "") + ">" + esc(r.date) + (r.weekly ? " 📆" : "") + "</button>"; }).join("") + "</div>";
+    h += '<div class="md" id="rep-body"></div>';
+    $("reports").innerHTML = h;
+    function showRep(i) {
+      document.querySelectorAll("#rep-list button").forEach(function (b) { b.classList.toggle("on", Number(b.dataset.i) === i); });
+      var text = reps[i].text.replace(/^```(\w*)$/gm, "```$1");
+      $("rep-body").innerHTML = window.marked ? marked.parse(text) : "<pre>" + esc(text) + "</pre>";
+    }
+    document.querySelectorAll("#rep-list button").forEach(function (b) { b.addEventListener("click", function () { showRep(Number(b.dataset.i)); }); });
+    showRep(0);
+  }
+
+  function renderLearning() {
+    var h = "", sc = D.scorecard || {};
+    h += "<h2>Scorecard</h2><div class=\"card\">" + (sc.evaluated ? kv([["ประเมินแล้ว", sc.evaluated], ["hit-rate", num((sc.hit_rate || 0) * 100, 0) + "%"], ["ผลตอบแทนเฉลี่ย", pct(sc.avg_return), true]]) +
+         (sc.hints && sc.hints.length ? "<ul>" + sc.hints.map(function (x) { return "<li>" + esc(x) + "</li>"; }).join("") + "</ul>" : "") : '<span class="muted">ยังไม่มีข้อมูลพอ</span>') + "</div>";
+    var w = (D.weekly || []).slice().reverse();
+    if (w.length) {
+      h += "<h2>สรุปรายสัปดาห์</h2>" + table([
+        {label: "สัปดาห์", get: function (r) { return (r.week_start || "") + " → " + (r.as_of || ""); }},
+        {label: "พอร์ต", raw: true, get: function (r) { return Object.keys(r.portfolios || {}).map(function (n) { var p = r.portfolios[n]; return esc(n) + " " + pct(p.week_return_pct); }).join(" · "); }},
+        {label: "S&P", num: true, raw: true, get: function (r) { return pct((r.benchmarks || {})["S&P 500"]); }},
+        {label: "SET", num: true, raw: true, get: function (r) { return pct((r.benchmarks || {})["SET Index"]); }},
+        {label: "ดีล", num: true, get: function (r) { return (r.trades || []).length; }},
+        {label: "มุมมองเปลี่ยน", get: function (r) { return (r.verdict_changes || []).map(function (c) { return c.symbol + " " + c.from + "→" + c.to; }).join(", "); }},
+      ], w);
+    }
+    var v = (D.verdicts || []).slice(-1)[0];
+    if (v && v.verdicts) {
+      h += "<h2>คำตัดสินล่าสุด " + esc(v.date || "") + "</h2>" + table([{label: "Symbol", key: "s"}, {label: "มุมมอง", key: "view"}, {label: "คะแนน", num: true, key: "score"}],
+        Object.keys(v.verdicts).map(function (s) { return {s: s, view: v.verdicts[s].view, score: v.verdicts[s].score}; }).sort(function (a, b) { return (b.score || 0) - (a.score || 0); }));
+    }
+    if (D.lessons) h += "<h2>LESSONS.md</h2><div class=\"card lesson\">" + esc(D.lessons) + "</div>";
+    $("learning").innerHTML = h;
+  }
+
+  function renderJitta() {
+    var h = "", jp = D.jitta_picks || {};
+    if (jp.evaluated) {
+      h += "<h2>ผลของหุ้นที่ Jitta คัด</h2><div class=\"card\">" + kv([["ประเมินแล้ว", jp.evaluated], ["hit-rate (ชนะตลาด)", num(((jp.overall || {}).hit_rate || 0) * 100, 0) + "%"], ["ผลตอบแทนเฉลี่ย", pct((jp.overall || {}).avg_return), true], ["excess เฉลี่ย", pct((jp.overall || {}).avg_excess), true]]) + "</div>";
+      h += table([{label: "วันที่", key: "date"}, {label: "Symbol", key: "symbol"}, {label: "เกรด", key: "grade"},
+                  {label: "ผลตอบแทน", num: true, raw: true, get: function (r) { return pct(r.return_pct); }},
+                  {label: "excess", num: true, raw: true, get: function (r) { return pct(r.excess_pct); }}, {label: "วัน", num: true, key: "days"}],
+                 (jp.best || []).concat(jp.worst || []));
+    }
+    var cand = D.watch_candidates || {};
+    var candRows = Object.keys(cand).map(function (s) { return Object.assign({symbol: s}, cand[s]); });
+    if (candRows.length) h += "<h2>ตัวที่คัดเข้า watchlist (ยังไม่ซื้อ)</h2>" + table([{label: "Symbol", key: "symbol"}, {label: "ตลาด", key: "market"}, {label: "เพิ่ม", key: "added"}, {label: "หมดอายุ", key: "expires"},
+        {label: "Jitta", num: true, get: function (r) { return num(r.jitta_score); }}, {label: "รวม", num: true, get: function (r) { return num(r.total_score, 0); }}, {label: "เหตุผล", key: "reason"}], candRows);
+    if ((D.jitta_pool || []).length) h += "<h2>Pool ล่าสุด (30 อันดับแรก)</h2>" + table([{label: "#", key: "rank"}, {label: "Symbol", key: "yahoo_symbol"}, {label: "ตลาด", key: "market"}, {label: "เซกเตอร์", key: "sector"},
+        {label: "รวม", num: true, get: function (r) { return num(r.total_score, 0); }}, {label: "เกรด", key: "grade"}, {label: "Jitta", num: true, get: function (r) { return num(r.jitta_score); }},
+        {label: "vs Line", num: true, raw: true, get: function (r) { return pct(r.price_diff); }}, {label: "loss", num: true, get: function (r) { return num(r.loss_chance, 0); }}], D.jitta_pool);
+    var hist = D.jitta_history || [];
+    if (hist.length) {
+      var by = {};
+      hist.forEach(function (r) { (by[r.symbol] = by[r.symbol] || []).push(r); });
+      h += "<h2>Jitta Score ย้อนหลัง</h2>" + table([{label: "Symbol", key: "symbol"}, {label: "จุด", num: true, key: "n"}, {label: "แรก", num: true, key: "first"}, {label: "ล่าสุด", num: true, key: "last"},
+        {label: "เปลี่ยน", num: true, raw: true, get: function (r) { return pct(r.chg); }}, {label: "vs Line ล่าสุด", num: true, raw: true, get: function (r) { return pct(r.line); }}],
+        Object.keys(by).map(function (s) { var a = by[s], f = Number(a[0].jitta_score), l = Number(a[a.length - 1].jitta_score); return {symbol: s, n: a.length, first: num(f), last: num(l), chg: (isNaN(f) || isNaN(l) || !f) ? null : ((l / f - 1) * 100), line: a[a.length - 1].jitta_line_pct}; }));
+    }
+    $("jitta").innerHTML = h || '<p class="muted">ยังไม่มีข้อมูล Jitta</p>';
+  }
+
+  function renderWatch() {
+    var wl = D.watchlist || {}, prices = {};
+    (D.prices || []).forEach(function (r) { prices[r.symbol] = r; });
+    var syms = [].concat(wl.set_tickers || [], wl.us_tickers || []);
+    var h = "<h2>Watchlist (" + syms.length + ")</h2>" + table([{label: "Symbol", key: "symbol"}, {label: "Sector", get: function (r) { return (prices[r.symbol] || {}).sector || ""; }},
+      {label: "ราคา", num: true, get: function (r) { return num((prices[r.symbol] || {}).current_price); }}, {label: "PE", num: true, get: function (r) { return num((prices[r.symbol] || {}).pe, 1); }},
+      {label: "RSI", num: true, get: function (r) { return num((prices[r.symbol] || {}).rsi_14, 0); }}, {label: "Jitta", num: true, get: function (r) { return num((prices[r.symbol] || {}).jitta_score); }},
+      {label: "vs Line", num: true, raw: true, get: function (r) { return pct((prices[r.symbol] || {}).jitta_line_pct); }}, {label: "เป้านักวิเคราะห์", num: true, get: function (r) { return num((prices[r.symbol] || {}).target_mean_price); }},
+      {label: "งบ", get: function (r) { return (prices[r.symbol] || {}).next_earnings || ""; }}], syms.map(function (s) { return {symbol: s}; }));
+    if (wl.risk_limits) h += "<h2>เพดานความเสี่ยง</h2><div class=\"card\">" + kv(Object.keys(wl.risk_limits).filter(function (k) { return k[0] !== "_"; }).map(function (k) { return [k, wl.risk_limits[k] + "%"]; })) + "</div>";
+    $("watch").innerHTML = h;
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>

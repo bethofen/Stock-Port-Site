@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#071218">
+  <title>ภาพรวมพอร์ต · Deep Current</title>
+  <link rel="stylesheet" href="./assets/dashboard.css">
+</head>
+<body>
+  <section class="gate" id="gate" aria-labelledby="gate-title">
+    <p class="eyeline">PRIVATE PORTFOLIO / 深海</p>
+    <h1 id="gate-title">เปิด dashboard</h1>
+    <p>ใช้รหัสผ่านเดียวกับ Stock Port เพื่อถอดรหัสข้อมูลในเบราว์เซอร์ ข้อมูลไม่ถูกส่งออกจากเครื่อง</p>
+    <label for="password">รหัสผ่าน</label>
+    <input id="password" type="password" autocomplete="current-password" autofocus>
+    <button id="open" type="button">เข้าสู่ภาพรวม</button>
+    <p class="error" id="gate-error" role="alert"></p>
+    <p class="loader" id="loader" aria-live="polite">กำลังอ่านข้อมูลที่เข้ารหัส…</p>
+    <p class="meta">ข้อมูลต้นทางยังคงแยกกัน · Stock Port / Copy Quant</p>
+  </section>
+
+  <div id="app" hidden>
+    <header class="topbar">
+      <a class="brand" href="./" data-route="home" aria-label="Deep Current ภาพรวม">
+        <svg class="brandmark" viewBox="0 0 32 32" aria-hidden="true"><path d="M3 16h8l4-8 5 16 4-8h5" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-opacity=".42"/></svg>
+        <span class="brandname">PORTFOLIO<small>深海 / DEEP CURRENT</small></span>
+      </a>
+      <nav class="nav" aria-label="เมนูหลัก">
+        <a href="./" data-route="home" aria-current="page">ภาพรวม</a><a href="./report/" data-route="stock">หุ้น</a><a href="./copytrade/" data-route="copyquant">Copy Quant</a><a href="./report/#reports" data-route="reports">รายงาน</a>
+      </nav>
+      <div class="topmeta" id="top-update">กำลังอ่านสถานะ…</div>
+    </header>
+    <main class="wrap main" id="dashboard-home">
+      <section class="hero" aria-labelledby="home-title">
+        <div><p class="eyeline">PORTFOLIO / MONITOR</p><h1 id="home-title">ภาพรวมพอร์ต</h1><p>สถานะล่าสุดของสองระบบ แสดงมูลค่าแยกตามแหล่งข้อมูล และสรุปรวมเมื่อแปลงเป็นเงินบาทได้</p></div>
+        <svg class="hero-art" viewBox="0 0 400 360" role="img" aria-label="เส้นโซนาร์แสดงจังหวะข้อมูล"><g fill="none" stroke="#6bd7cb"><circle cx="226" cy="188" r="45" opacity=".54"/><circle cx="226" cy="188" r="82" opacity=".36"/><circle cx="226" cy="188" r="119" opacity=".23"/><circle cx="226" cy="188" r="156" opacity=".14"/><path d="M70 188h310M226 32v312" opacity=".16"/><path d="M226 188 346 101" opacity=".42"/><circle cx="346" cy="101" r="3" fill="#6bd7cb"/></g></svg>
+      </section>
+
+      <section class="summary" aria-label="มูลค่ารวมและรายระบบ">
+        <div class="summary-item total"><span class="summary-label">มูลค่ารวมโดยประมาณ</span><strong class="summary-value" id="overall-total">—</strong><span class="summary-note" id="overall-currency">THB · รอข้อมูล · หุ้น + wallet เท่านั้น</span></div>
+        <div class="summary-item"><span class="summary-label">Stock Port</span><strong class="summary-value" id="stock-total">—</strong><span class="summary-note" id="stock-currency">รอข้อมูล</span></div>
+        <div class="summary-item"><span class="summary-label">Copy Quant wallet</span><strong class="summary-value" id="copy-total">—</strong><span class="summary-note" id="copy-currency">USDT</span></div>
+        <div class="summary-item return"><span class="summary-label">ผลตอบแทนรวม</span><strong class="summary-value" id="overall-return">—</strong><span class="summary-note" id="overall-return-note">รอข้อมูลระดับพอร์ต</span></div>
+      </section>
+      <p class="alert" id="overall-warning" hidden>ไม่สามารถอ่าน feed ได้ทั้งสองระบบ ตรวจสถานะการเผยแพร่ข้อมูล</p>
+
+      <section aria-labelledby="attention-title">
+        <div class="section-title"><h2 id="attention-title">สิ่งที่ควรดูวันนี้</h2><span>DAILY SIGNALS</span></div>
+        <div class="attention">
+          <div><h2>แหล่งข้อมูล</h2><p>ตรวจความสดและความครบก่อนอ่านผล</p></div>
+          <div class="signal" id="attention-stock"><span class="dot"></span> Stock · รอข้อมูล</div>
+          <div class="signal" id="attention-copy"><span class="dot"></span> Copy Quant · รอข้อมูล</div>
+          <div class="signal"><span class="dot warn"></span> % รวม · ต้องมี PnL และเงินเข้าออกจริง</div>
+        </div>
+      </section>
+
+      <section class="systems" aria-label="รายละเอียดรายระบบ">
+        <article class="system">
+          <div class="syshead"><div><h2>STOCK PORT</h2><p>พอร์ตหุ้น · ยอดตามสกุลต้นทาง</p></div><div id="stock-status"></div></div>
+          <div class="sysmetrics stockmetrics"><div class="metric"><label>มูลค่ารวมของหุ้น</label><strong id="stock-value-detail">—</strong><small id="stock-asof">กำลังอ่านข้อมูล</small></div><div class="metric"><label>กำไร/ขาดทุนสะสม</label><strong id="stock-pnl">—</strong><small id="stock-pnl-note">จากข้อมูลบัญชีต้นทาง</small></div><div class="metric"><label>จำนวนหลักทรัพย์</label><strong id="stock-count">—</strong><small>รายการในทุกพอร์ตหุ้น</small></div></div>
+          <div class="rows" id="stock-rows"></div><p class="alert" id="stock-warning" hidden></p>
+          <a class="action" href="./report/" data-route="stock">ดูรายละเอียดหุ้น <span aria-hidden="true">→</span></a>
+          <p class="fineprint" id="stock-footnote">ข้อมูลจากรายงาน Stock Port · ไม่รวมกับสินทรัพย์สกุลอื่นจนกว่าจะมี FX</p>
+        </article>
+        <article class="system">
+          <div class="syshead"><div><h2>COPY QUANT</h2><p>สถานะ lead และกระเป๋า Copy Trading</p></div><div id="copy-status"></div></div>
+          <div class="sysmetrics"><div class="metric"><label>Copy Trading wallet</label><strong id="copy-value-detail">—</strong><small id="copy-asof">กำลังอ่านข้อมูล</small></div><div class="metric"><label>KEEP / WATCH / EXIT</label><strong id="copy-counts">—</strong><small>คำแนะนำ lead · ไม่ใช่ PnL ของพอร์ตคุณ</small></div></div>
+          <div class="rows" id="copy-rows"></div><p class="alert" id="copy-warning" hidden></p>
+          <a class="action" href="./copytrade/" data-route="copyquant">ดู Copy Quant <span aria-hidden="true">→</span></a>
+          <p class="fineprint">ยอดรวมแสดงเฉพาะหุ้นและ Copy Trading wallet ไม่รวม position ของ copier ซึ่ง API ไม่เปิดเผย · ROI ของ lead ไม่ใช่ผลตอบแทน copier</p>
+        </article>
+      </section>
+      <footer class="foot"><span>DATA IS NOT EXECUTION · อ่านอย่างเดียว</span><span>เวลาที่แสดง: Asia/Bangkok · เกิน 48 ชม. ถือว่าข้อมูลเก่า</span></footer>
+    </main>
+    <section class="detail-view" id="detail-view" hidden aria-label="รายละเอียดระบบ">
+      <iframe id="detail-frame" title="รายละเอียดพอร์ต" referrerpolicy="same-origin"></iframe>
+    </section>
+  </div>
+  <script src="./assets/dashboard.js" defer></script>
+</body>
+</html>

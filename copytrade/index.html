@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#071218">
+  <title>Copy Quant · Deep Current</title><link rel="stylesheet" href="../assets/dashboard.css">
+</head>
+<body>
+  <section class="gate" id="gate" aria-labelledby="gate-title"><p class="eyeline">COPY QUANT / 深海</p><h1 id="gate-title">เปิดรายละเอียด Copy Quant</h1><p>ใช้รหัสผ่านเดียวกับ dashboard ข้อมูลจะถูกถอดรหัสในเบราว์เซอร์เท่านั้น</p><label for="password">รหัสผ่าน</label><input id="password" type="password" autocomplete="current-password"><button id="open" type="button">เปิดข้อมูล Copy Quant</button><p class="error" id="gate-error" role="alert"></p><p class="loader" id="loader" aria-live="polite">กำลังถอดรหัส…</p></section>
+  <div id="app" hidden>
+    <header class="topbar"><a class="brand" href="../"><svg class="brandmark" viewBox="0 0 32 32" aria-hidden="true"><path d="M3 16h8l4-8 5 16 4-8h5" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="16" cy="16" r="14" fill="none" stroke="currentColor" stroke-opacity=".42"/></svg><span class="brandname">PORTFOLIO<small>深海 / DEEP CURRENT</small></span></a><nav class="nav" aria-label="เมนูหลัก"><a href="../">ภาพรวม</a><a href="../report/">หุ้น</a><a href="./" aria-current="page">Copy Quant</a><a href="../report/#reports">รายงาน</a></nav><div class="topmeta" id="top-meta"></div></header>
+    <main class="wrap main">
+      <section class="hero"><div><p class="eyeline">BINANCE COPY TRADING / READ ONLY</p><h1>Copy Quant</h1><p>ผลนี้อธิบายสถานะและความเสี่ยงของ lead ไม่ใช่ผลตอบแทนหรือสถานะ position ของบัญชี copier</p></div><svg class="hero-art" viewBox="0 0 400 360" aria-hidden="true"><g fill="none" stroke="#6bd7cb"><circle cx="226" cy="188" r="45" opacity=".54"/><circle cx="226" cy="188" r="82" opacity=".36"/><circle cx="226" cy="188" r="119" opacity=".23"/><path d="M70 188h310M226 32v312M226 188 346 101" opacity=".24"/></g></svg></section>
+      <section class="summary" aria-label="สถานะ Copy Quant"><div class="summary-item total"><span class="summary-label">Copy Trading wallet</span><strong class="summary-value" id="wallet">—</strong><span class="summary-note" id="wallet-asof">—</span></div><div class="summary-item"><span class="summary-label">KEEP</span><strong class="summary-value" id="count-keep">—</strong><span class="summary-note">lead ที่ประเมิน</span></div><div class="summary-item"><span class="summary-label">WATCH</span><strong class="summary-value" id="count-watch">—</strong><span class="summary-note">lead ที่ประเมิน</span></div><div class="summary-item"><span class="summary-label">EXIT / CHECK</span><strong class="summary-value" id="count-exit">—</strong><span class="summary-note">EXIT และข้อมูลที่ต้องตรวจ</span></div></section>
+      <section><div class="section-title"><h2>คุณภาพข้อมูลรอบล่าสุด</h2><span id="quality-date">—</span></div><div class="attention" id="quality-summary"></div><p class="alert" id="stale" hidden>ข้อมูลเก่ากว่า 48 ชั่วโมง โปรดตรวจวันที่ก่อนนำไปใช้ตัดสินใจ</p></section>
+      <section><div class="section-title"><h2>Lead ที่ติดตาม</h2><span>LEAD PERFORMANCE ≠ COPIER RETURN</span></div><div class="rows" id="leads"></div></section>
+      <section id="daily-report"><div class="section-title"><h2>รายงานประจำวัน</h2><span id="report-date">—</span></div><div class="md" id="report-content" style="white-space:pre-wrap;overflow:auto;border-top:1px solid var(--line);padding:18px 0;color:var(--muted);font-size:12px"></div></section>
+      <footer class="foot"><a href="../">← กลับภาพรวม</a><span>แหล่งข้อมูล Binance · อ่านอย่างเดียว · ไม่มีคำสั่งเทรด</span></footer>
+    </main>
+  </div>
+<script src="./detail.js" defer></script></body></html>

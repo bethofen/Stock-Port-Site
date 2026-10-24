@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>จัดการพอร์ต</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root {
+    --bg: var(--tg-theme-bg-color, #f4f1ea);
+    --fg: var(--tg-theme-text-color, #1c1a17);
+    --muted: var(--tg-theme-hint-color, #6b6560);
+    --card: var(--tg-theme-secondary-bg-color, #ffffff);
+    --accent: var(--tg-theme-button-color, #1f8a86);
+    --accent-fg: var(--tg-theme-button-text-color, #ffffff);
+    --line: rgba(128, 120, 110, 0.35);
+    --danger: #b3261e;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.4 system-ui, -apple-system, "Segoe UI", "Noto Sans Thai", sans-serif; }
+  main { padding: 16px 16px 96px; max-width: 520px; margin: 0 auto; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .hint { color: var(--muted); font-size: 13px; margin: 0 0 16px; }
+  section { display: none; }
+  section.active { display: block; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .action { border: 1px solid var(--line); background: var(--card); color: var(--fg); border-radius: 12px; padding: 18px 12px; font-size: 17px; font-weight: 600; min-height: 64px; text-align: left; }
+  .action.wide { grid-column: 1 / span 2; }
+  .action small { display: block; font-weight: 400; font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .action.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent) inset; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 14px 0 6px; }
+  label span { font-weight: 400; }
+  input, select { width: 100%; font-size: 17px; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--fg); min-height: 48px; }
+  .err { color: var(--danger); font-size: 13px; min-height: 18px; margin-top: 6px; }
+  .row { display: flex; gap: 10px; }
+  .row > * { flex: 1; }
+  .seg { display: flex; gap: 8px; }
+  .seg button { flex: 1; min-height: 44px; border: 1px solid var(--line); background: var(--card); color: var(--fg); border-radius: 10px; font-size: 15px; }
+  .seg button.sel { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  .summary { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-top: 12px; }
+  .summary div { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .summary div:last-child { border-bottom: 0; }
+  .summary b { font-size: 17px; text-align: right; }
+  .bar { position: fixed; left: 0; right: 0; bottom: 0; padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); background: var(--bg); border-top: 1px solid var(--line); display: flex; gap: 10px; }
+  .bar button { flex: 1; min-height: 50px; border-radius: 12px; font-size: 17px; font-weight: 600; border: 1px solid var(--line); background: var(--card); color: var(--fg); }
+  .bar button.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  .bar button:disabled { opacity: 0.45; }
+  .outside { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; font-size: 13px; color: var(--muted); margin-top: 16px; }
+  code { font-family: ui-monospace, Consolas, monospace; font-size: 13px; word-break: break-all; }
+</style>
+</head>
+<body>
+<main>
+  <h1>จัดการพอร์ต</h1>
+  <p class="hint" id="hint">เลือกสิ่งที่ต้องการทำ คำสั่งจะถูกส่งเข้าแชทและบอทจะบันทึกให้ในรอบ 07:00</p>
+
+  <!-- step 1: action -->
+  <section id="s-action" class="active">
+    <div class="grid">
+      <button class="action" data-action="buy">ซื้อ / Buy<small>เปิดหรืออัปเดตสถานะ (โมเดล margin)</small></button>
+      <button class="action" data-action="sell">ขาย / Sell<small>ปิดสถานะ ใส่ราคาออกเพื่อบันทึกกำไร</small></button>
+      <button class="action" data-action="watch">เฝ้ามอง / Watch<small>เพิ่มหรือลบจาก watchlist</small></button>
+      <button class="action" data-action="remove">ลบ / Remove<small>ลบสถานะทิ้ง ไม่บันทึกการขาย</small></button>
+      <button class="action wide" data-action="cash">ฝาก / ถอนเงิน<small>ปรับ cash_balance ให้ตรงกับบัญชีจริง</small></button>
+    </div>
+  </section>
+
+  <!-- step 2: details -->
+  <section id="s-form">
+    <div id="f-watch-mode" style="display:none">
+      <label>ทำอะไรกับ watchlist</label>
+      <div class="seg" id="watch-seg">
+        <button type="button" data-mode="add" class="sel">เพิ่ม</button>
+        <button type="button" data-mode="rm">ลบ</button>
+      </div>
+    </div>
+
+    <div id="f-portfolio" style="display:none">
+      <label for="portfolio">พอร์ต <span id="portfolio-help">(หุ้นที่ถืออยู่แล้วจะเข้าพอร์ตเดิมอัตโนมัติ)</span></label>
+      <select id="portfolio"></select>
+    </div>
+
+    <div id="f-symbol">
+      <label for="symbol">Symbol <span id="symbol-help">(หุ้นไทยลงท้าย .BK เช่น PTT.BK)</span></label>
+      <input id="symbol" list="symbols" autocapitalize="characters" autocomplete="off" spellcheck="false"
+             placeholder="AAPL หรือ PTT.BK" inputmode="text">
+      <datalist id="symbols"></datalist>
+      <div class="err" id="e-symbol"></div>
+    </div>
+
+    <div id="f-buy" style="display:none">
+      <div class="row">
+        <div>
+          <label for="price">ราคาเข้า (Entry)</label>
+          <input id="price" type="number" inputmode="decimal" step="any" min="0" placeholder="0.00">
+        </div>
+        <div>
+          <label for="margin">Margin (เงินที่ใช้)</label>
+          <input id="margin" type="number" inputmode="decimal" step="any" min="0" placeholder="0.00">
+        </div>
+      </div>
+      <div class="err" id="e-buy"></div>
+      <label for="asset">ประเภทสินทรัพย์</label>
+      <select id="asset">
+        <option value="stock">stock</option>
+        <option value="crypto">crypto</option>
+        <option value="futures">futures</option>
+      </select>
+      <label for="reason">เหตุผลที่ซื้อ <span>(สั้น ๆ — Claude จะใช้รีวิวดีลนี้ตอนเช้า)</span></label>
+      <input id="reason" maxlength="120" placeholder="เช่น ทะลุแนวต้าน, งบดี, Jitta ต่ำกว่าเส้น">
+    </div>
+
+    <div id="f-sell" style="display:none">
+      <label for="exit">ราคาออก (Exit) <span>— เว้นว่างถ้าไม่ต้องการบันทึกกำไร/ขาดทุน</span></label>
+      <input id="exit" type="number" inputmode="decimal" step="any" min="0" placeholder="0.00">
+      <div class="err" id="e-sell"></div>
+    </div>
+
+    <div id="f-date" style="display:none">
+      <label for="date">วันที่ทำรายการ <span>(แก้ได้ถ้าทำไปก่อนหน้านี้)</span></label>
+      <input id="date" type="date">
+      <div class="err" id="e-date"></div>
+    </div>
+
+    <div id="f-cash" style="display:none">
+      <label>ทำอะไร</label>
+      <div class="seg" id="cash-seg">
+        <button type="button" data-mode="deposit" class="sel">ฝากเข้า</button>
+        <button type="button" data-mode="withdraw">ถอนออก</button>
+      </div>
+      <label for="amount">จำนวนเงิน</label>
+      <input id="amount" type="number" inputmode="decimal" step="any" min="0" placeholder="0.00">
+      <div class="err" id="e-cash"></div>
+      <label for="cash-note">หมายเหตุ <span>(เว้นว่างได้)</span></label>
+      <input id="cash-note" maxlength="80" placeholder="เช่น โอนจากบัญชีออม">
+    </div>
+  </section>
+
+  <!-- step 3: confirm -->
+  <section id="s-confirm">
+    <p class="hint">ตรวจสอบก่อนส่ง</p>
+    <div class="summary" id="summary"></div>
+    <div class="outside" id="outside" style="display:none">
+      หน้านี้ไม่ได้เปิดจากปุ่มในแชท Telegram จึงส่งกลับเข้าแชทไม่ได้ คำสั่งที่จะส่งคือ:
+      <br><code id="payload-preview"></code>
+    </div>
+  </section>
+</main>
+
+<div class="bar">
+  <button id="btn-back" type="button">ย้อนกลับ</button>
+  <button id="btn-next" type="button" class="primary" disabled>ถัดไป</button>
+</div>
+
+<script>
+(function () {
+  var tg = window.Telegram && window.Telegram.WebApp;
+  var insideTelegram = !!(tg && tg.initData);
+  if (tg) { try { tg.ready(); tg.expand(); } catch (e) {} }
+
+  var state = { step: 1, action: null, watchMode: "add", cashMode: "deposit" };
+  var $ = function (id) { return document.getElementById(id); };
+  var steps = ["s-action", "s-form", "s-confirm"];
+  var needsSymbol = { buy: true, sell: true, watch: true, remove: true, cash: false };
+  var needsDate = { buy: true, sell: true, watch: false, remove: false, cash: false };
+
+  function todayISO() {
+    var d = new Date(), z = function (n) { return (n < 10 ? "0" : "") + n; };
+    return d.getFullYear() + "-" + z(d.getMonth() + 1) + "-" + z(d.getDate());
+  }
+  $("date").value = todayISO();
+  $("date").max = todayISO();
+
+  // Optional suggestions: symbols.json = {"portfolios":[{name,currency,type}],"default":..,
+  // "held":[...],"held_by_portfolio":{name:[...]},"watch":[...]} next to this page.
+  var meta = { portfolios: [], defaultPortfolio: null, heldBy: {} };
+  fetch("./symbols.json", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (d) {
+      if (!d) return;
+      var list = [].concat(d.held || [], d.watch || []);
+      var dl = $("symbols");
+      list.forEach(function (s) { var o = document.createElement("option"); o.value = s; dl.appendChild(o); });
+      meta.portfolios = d.portfolios || [];
+      meta.defaultPortfolio = d.default || null;
+      meta.heldBy = d.held_by_portfolio || {};
+      var sel = $("portfolio");
+      sel.innerHTML = "";
+      meta.portfolios.forEach(function (p) {
+        var o = document.createElement("option");
+        o.value = p.name; o.textContent = p.name + " (" + (p.currency || "") + (p.type ? ", " + p.type : "") + ")";
+        if (p.name === meta.defaultPortfolio) o.selected = true;
+        sel.appendChild(o);
+      });
+      refreshPortfolioField();
+    }).catch(function () {});
+
+  function ownerOf(sym) {
+    for (var name in meta.heldBy) { if ((meta.heldBy[name] || []).indexOf(sym) >= 0) return name; }
+    return null;
+  }
+  // The portfolio picker only matters when there is more than one portfolio;
+  // a symbol already held is locked to its own portfolio.
+  function refreshPortfolioField() {
+    var multi = meta.portfolios.length > 1;
+    var relevant = state.action === "buy" || state.action === "sell" || state.action === "remove" || state.action === "cash";
+    $("f-portfolio").style.display = (multi && relevant) ? "block" : "none";
+    if (!multi) return;
+    var owner = (state.action !== "cash") ? ownerOf(symbol()) : null;
+    var sel = $("portfolio");
+    if (owner) { sel.value = owner; sel.disabled = true; $("portfolio-help").textContent = "(" + symbol() + " ถืออยู่ในพอร์ตนี้แล้ว)"; }
+    else { sel.disabled = false; $("portfolio-help").textContent = state.action === "cash" ? "(บัญชีที่จะฝาก/ถอน)" : "(หุ้นใหม่จะเข้าพอร์ตที่เลือก)"; }
+  }
+
+  function show(step) {
+    state.step = step;
+    steps.forEach(function (id, i) { $(id).classList.toggle("active", i === step - 1); });
+    $("btn-back").style.visibility = step === 1 ? "hidden" : "visible";
+    $("btn-next").textContent = step === 3 ? (insideTelegram ? "ยืนยันและส่ง" : "ปิด") : "ถัดไป";
+    validate();
+    window.scrollTo(0, 0);
+  }
+
+  function symbol() { return ($("symbol").value || "").trim().toUpperCase().replace(/\s+/g, ""); }
+  // Watch accepts several tickers at once: "TSLA, PTT.BK NVDA" -> ["TSLA","PTT.BK","NVDA"] (deduped)
+  function symbolList() {
+    var seen = {}, out = [];
+    ($("symbol").value || "").toUpperCase().split(/[\s,;]+/).forEach(function (s) {
+      s = s.trim();
+      if (s && !seen[s]) { seen[s] = 1; out.push(s); }
+    });
+    return out;
+  }
+  var SYM_RE = /^[A-Z0-9.\-]{1,15}$/;
+  function num(id) { var v = $(id).value.trim(); return v === "" ? null : Number(v); }
+
+  function validate() {
+    var ok = false;
+    if (state.step === 1) ok = !!state.action;
+    else if (state.step === 2) {
+      var errs = { symbol: "", buy: "", sell: "", date: "", cash: "" };
+      if (state.action === "watch") {
+        var list = symbolList(), bad = list.filter(function (s) { return !SYM_RE.test(s); });
+        if (!list.length) errs.symbol = "ใส่ symbol อย่างน้อย 1 ตัว";
+        else if (bad.length) errs.symbol = "รูปแบบไม่ถูกต้อง: " + bad.join(", ");
+      } else if (needsSymbol[state.action]) {
+        var s = symbol();
+        if (!SYM_RE.test(s)) errs.symbol = s ? "รูปแบบ symbol ไม่ถูกต้อง" : "ใส่ symbol";
+      }
+      if (state.action === "buy") {
+        var p = num("price"), m = num("margin");
+        if (p === null || !(p > 0)) errs.buy = "ราคาเข้าต้องมากกว่า 0";
+        else if (m === null || !(m > 0)) errs.buy = "margin ต้องมากกว่า 0";
+      } else if (state.action === "sell") {
+        var x = num("exit");
+        if (x !== null && !(x > 0)) errs.sell = "ราคาออกต้องมากกว่า 0 หรือเว้นว่าง";
+      } else if (state.action === "cash") {
+        var a = num("amount");
+        if (a === null || !(a > 0)) errs.cash = "จำนวนเงินต้องมากกว่า 0";
+      }
+      if (needsDate[state.action]) {
+        var dv = $("date").value;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(dv)) errs.date = "ใส่วันที่";
+        else if (dv > todayISO()) errs.date = "วันที่ต้องไม่เกินวันนี้";
+      }
+      ["symbol", "buy", "sell", "date", "cash"].forEach(function (k) { $("e-" + k).textContent = errs[k]; });
+      ok = !errs.symbol && !errs.buy && !errs.sell && !errs.date && !errs.cash;
+    } else ok = true;
+    $("btn-next").disabled = !ok;
+    return ok;
+  }
+
+  function chosenPortfolio() {
+    if (meta.portfolios.length <= 1) return null;          // single portfolio: let the bot decide
+    var v = $("portfolio").value;
+    return v || null;
+  }
+
+  function payload() {
+    var d = {};
+    if (state.action === "cash") {
+      d.cmd = state.cashMode; d.amount = num("amount");
+      var cn = $("cash-note").value.trim(); if (cn) d.note = cn;
+      var cp = chosenPortfolio(); if (cp) d.portfolio = cp;
+      return d;
+    }
+    if (state.action === "watch") {
+      var list = symbolList();
+      d.cmd = "watch"; d.symbol = list[0] || ""; d.action = state.watchMode; d.symbols = list;
+      return d;
+    }
+    var s = symbol();
+    d.cmd = state.action; d.symbol = s;
+    if (state.action === "buy") {
+      d.price = num("price"); d.margin = num("margin"); d.asset_type = $("asset").value;
+      var r = $("reason").value.trim(); if (r) d.note = r;
+    }
+    if (state.action === "sell") { var x = num("exit"); if (x !== null) d.price = x; }
+    if (needsDate[state.action] && $("date").value !== todayISO()) d.date = $("date").value;
+    var p = chosenPortfolio(); if (p) d.portfolio = p;
+    return d;
+  }
+
+  function esc(v) { return String(v).replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+  function line(k, v) { return "<div><span>" + k + "</span><b>" + esc(v) + "</b></div>"; }
+  function renderSummary() {
+    var d = payload(), rows = "";
+    if (d.cmd === "deposit" || d.cmd === "withdraw") {
+      rows += line("คำสั่ง", d.cmd === "deposit" ? "ฝากเงินเข้า" : "ถอนเงินออก");
+      if (d.portfolio) rows += line("พอร์ต", d.portfolio);
+      rows += line("จำนวน", d.amount);
+      if (d.note) rows += line("หมายเหตุ", d.note);
+    } else {
+      if (d.portfolio) rows += line("พอร์ต", d.portfolio);
+      var title = { buy: "ซื้อ", sell: "ขาย", watch: "เฝ้ามอง", remove: "ลบสถานะ" }[d.cmd];
+      rows += line("คำสั่ง", title + (d.cmd === "watch" ? (d.action === "add" ? " (เพิ่ม)" : " (ลบ)") : ""));
+      if (d.cmd === "watch") rows += line("Symbol (" + d.symbols.length + ")", d.symbols.join(", "));
+      else rows += line("Symbol", d.symbol);
+      if (d.cmd === "buy") {
+        rows += line("ราคาเข้า", d.price); rows += line("Margin", d.margin); rows += line("ประเภท", d.asset_type);
+        if (d.note) rows += line("เหตุผล", d.note);
+      }
+      if (d.cmd === "sell") rows += line("ราคาออก", d.price != null ? d.price : "— (ไม่บันทึกกำไร)");
+      if (d.cmd === "remove") rows += line("หมายเหตุ", "ไม่บันทึกการขาย / ไม่คิด P&L");
+      if (needsDate[d.cmd]) rows += line("วันที่", d.date || (todayISO() + " (วันนี้)"));
+    }
+    $("summary").innerHTML = rows;
+    $("payload-preview").textContent = JSON.stringify(d);
+    $("outside").style.display = insideTelegram ? "none" : "block";
+  }
+
+  function applyAction(action) {
+    state.action = action;
+    $("f-symbol").style.display = needsSymbol[action] ? "block" : "none";
+    $("f-date").style.display = needsDate[action] ? "block" : "none";
+    $("f-buy").style.display = action === "buy" ? "block" : "none";
+    $("f-sell").style.display = action === "sell" ? "block" : "none";
+    $("f-watch-mode").style.display = action === "watch" ? "block" : "none";
+    $("f-cash").style.display = action === "cash" ? "block" : "none";
+    refreshPortfolioField();
+    if (action === "watch") {
+      $("symbol-help").textContent = "(ใส่หลายตัวได้ คั่นด้วยจุลภาคหรือช่องว่าง เช่น TSLA, PTT.BK)";
+      $("symbol").placeholder = "TSLA, PTT.BK, NVDA";
+    } else {
+      $("symbol-help").textContent = "(หุ้นไทยลงท้าย .BK เช่น PTT.BK)";
+      $("symbol").placeholder = "AAPL หรือ PTT.BK";
+    }
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll(".action"), function (b) {
+    b.addEventListener("click", function () {
+      applyAction(b.getAttribute("data-action"));
+      Array.prototype.forEach.call(document.querySelectorAll(".action"), function (x) { x.classList.toggle("sel", x === b); });
+      validate();
+      show(2);
+      (needsSymbol[state.action] ? $("symbol") : $("amount")).focus();
+    });
+  });
+
+  function segment(id, key) {
+    Array.prototype.forEach.call(document.querySelectorAll("#" + id + " button"), function (b) {
+      b.addEventListener("click", function () {
+        state[key] = b.getAttribute("data-mode");
+        Array.prototype.forEach.call(document.querySelectorAll("#" + id + " button"), function (x) { x.classList.toggle("sel", x === b); });
+      });
+    });
+  }
+  segment("watch-seg", "watchMode");
+  segment("cash-seg", "cashMode");
+
+  ["symbol", "price", "margin", "exit", "date", "amount"].forEach(function (id) { $(id).addEventListener("input", validate); });
+  $("symbol").addEventListener("input", function () {
+    // uppercase in place, but keep separators so several tickers can be typed for Watch
+    var v = this.value.toUpperCase();
+    if (v !== this.value) this.value = v;
+    refreshPortfolioField();
+  });
+
+  $("btn-back").addEventListener("click", function () { if (state.step > 1) show(state.step - 1); });
+  $("btn-next").addEventListener("click", function () {
+    if (!validate()) return;
+    if (state.step === 1) { show(2); return; }
+    if (state.step === 2) { renderSummary(); show(3); return; }
+    var text = JSON.stringify(payload());
+    if (insideTelegram) {
+      try { tg.sendData(text); } catch (e) { alert("ส่งไม่สำเร็จ: " + e); }
+    } else if (tg && tg.close) {
+      tg.close();
+    }
+  });
+
+  show(1);
+})();
+</script>
+</body>
+</html>
