@@ -1,0 +1,63 @@
+{
+  "portfolios": [
+    {
+      "name": "beatking",
+      "currency": "USD",
+      "type": "stock"
+    }
+  ],
+  "default": "beatking",
+  "held": [
+    "NVO",
+    "UHS",
+    "FDS",
+    "CRM",
+    "AMZN",
+    "INTU",
+    "SPSC",
+    "LRN"
+  ],
+  "held_by_portfolio": {
+    "beatking": [
+      "NVO",
+      "UHS",
+      "FDS",
+      "CRM",
+      "AMZN",
+      "INTU",
+      "SPSC",
+      "LRN"
+    ]
+  },
+  "watch": [
+    "SISB.BK",
+    "COM7.BK",
+    "MBK.BK",
+    "TOA.BK",
+    "USLM",
+    "DUOL",
+    "HIG",
+    "EME",
+    "TME",
+    "MLI",
+    "FIX",
+    "LDOS",
+    "STRL",
+    "NVDA",
+    "AFYA"
+  ],
+  "sizing": {
+    "beatking": {
+      "currency": "USD",
+      "as_of": "2026-10-28",
+      "cash_available": 98.8,
+      "max_new_buy_amt": 98.8,
+      "size_starter_amt": 14.76,
+      "size_normal_amt": 36.9,
+      "size_high_amt": 73.79,
+      "min_order_amt": 10.0
+    }
+  },
+  "plans": {},
+  "generated_at": "2026-11-21T04:14:15+00:00"
+}
